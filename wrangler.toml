@@ -1,0 +1,10 @@
+name = "quantis-sim-engine"
+main = "src/worker/index.py"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["python_workers"]
+
+[vars]
+ENVIRONMENT = "production"
+
+[observability]
+enabled = true
