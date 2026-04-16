@@ -84,6 +84,13 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           NPM_CONFIG_LEGACY_PEER_DEPS: true
         
+      - name: Ensure Pages Project Exists
+        run: npx wrangler pages project create quantis-platform --production-branch main || true
+        env:
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy .vercel/output --project-name=quantis-platform --branch main
 
