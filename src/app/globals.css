@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #FF90E8;
+  --color-sky: #D6EAFF;
+  --color-ink: #111111;
+  --color-chalk: #FFFFFF;
+
+  --shadow-nb: 3px 3px 0px #000000;
+  --shadow-nb-sm: 2px 2px 0px #000000;
+  --shadow-nb-lg: 5px 5px 0px #000000;
+
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background-color: var(--color-sky);
+  color: var(--color-ink);
+  font-family: var(--font-sans), sans-serif;
+}
