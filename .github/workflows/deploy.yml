@@ -46,11 +46,13 @@ jobs:
       - name: Build Next-on-Pages
         run: |
           export NODE_OPTIONS="--max-old-space-size=4096"
+          export NPM_CONFIG_LEGACY_PEER_DEPS=true
           npm run pages:build
         env:
           NEXT_PUBLIC_WORKER_URL: https://quantis-sim-engine.successstairway52.workers.dev
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          NPM_CONFIG_LEGACY_PEER_DEPS: true
         
       - name: Verify Build Output
         run: |
