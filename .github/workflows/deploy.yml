@@ -44,12 +44,23 @@ jobs:
         run: npm ci --legacy-peer-deps
         
       - name: Build Next-on-Pages
-        run: npm run pages:build
+        run: |
+          export NODE_OPTIONS="--max-old-space-size=4096"
+          npm run pages:build
         env:
           NEXT_PUBLIC_WORKER_URL: https://quantis-sim-engine.successstairway52.workers.dev
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         
+      - name: Verify Build Output
+        run: |
+          if [ -d ".vercel/output" ]; then
+            echo "Build successful, output directory exists."
+          else
+            echo "Error: .vercel/output directory not found!"
+            exit 1
+          fi
+
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy .vercel/output --project-name=quantis
         env:
