@@ -7,16 +7,17 @@ import { useParams, useRouter } from 'next/navigation';
 import { strategyService, Strategy } from '@/lib/services/strategy';
 import { dashboardService } from '@/lib/services/dashboard';
 import { Badge } from '@/components/ui/Badge';
-import { Card } from '@/components/ui/Card';
+
 import { TradeHistoryFeed } from '@/components/dashboard/TradeHistoryFeed';
-import { Loader2, ArrowLeft, Play, Square, Activity, DollarSign, BarChart3 } from 'lucide-react';
+import { Loader2, ArrowLeft, Square, Activity, DollarSign, BarChart3 } from 'lucide-react';
+
 
 export default function StrategyDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [loading, setLoading] = useState(true);
-  const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,9 +28,9 @@ export default function StrategyDetailPage() {
         const found = data.find(s => s.id === id);
         if (found) {
           setStrategy(found);
-          const prices = await dashboardService.getMarketPrices(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
-          setMarketPrices(prices);
+          await dashboardService.getMarketPrices(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
         }
+
       } catch (err) {
         console.error("Fetch strategy detail failed:", err);
       } finally {

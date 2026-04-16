@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const [activeBots, setActiveBots] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     try {
       const [newSnapshot, newTrades, newActiveBots] = await Promise.all([
         dashboardService.getUserSnapshot(),
@@ -30,31 +30,33 @@ export default function DashboardPage() {
       if (newSnapshot) {
         setSnapshot(newSnapshot);
         // Fetch prices for held assets
-        const symbols = Object.keys(newSnapshot.portfolio_assets).filter(s => (newSnapshot.portfolio_assets as any)[s] > 0);
+        const assets = newSnapshot.portfolio_assets as Record<string, number>;
+        const symbols = Object.keys(assets).filter(s => assets[s] > 0);
         if (symbols.length > 0) {
           const newPrices = await dashboardService.getMarketPrices(symbols);
           setPrices(newPrices);
         }
       }
       
-      setTrades(newTrades as any);
+      setTrades(newTrades);
       setActiveBots(newActiveBots);
     } catch (error) {
       console.error("Dashboard refresh error:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const refreshPrices = async () => {
+  const refreshPrices = React.useCallback(async () => {
     if (snapshot) {
-      const symbols = Object.keys(snapshot.portfolio_assets).filter(s => (snapshot.portfolio_assets as any)[s] > 0);
+      const assets = snapshot.portfolio_assets as Record<string, number>;
+      const symbols = Object.keys(assets).filter(s => assets[s] > 0);
       if (symbols.length > 0) {
         const newPrices = await dashboardService.getMarketPrices(symbols);
         setPrices(prev => ({ ...prev, ...newPrices }));
       }
     }
-  };
+  }, [snapshot]);
 
   useEffect(() => {
     fetchData();
@@ -76,7 +78,8 @@ export default function DashboardPage() {
       clearInterval(priceInterval);
       supabase.removeChannel(tradeSubscription);
     };
-  }, []);
+  }, [fetchData, refreshPrices]);
+
 
   if (loading) {
     return (

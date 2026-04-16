@@ -1,5 +1,6 @@
 import React from 'react';
-import { Terminal as TerminalIcon, AlertCircle } from 'lucide-react';
+import { Terminal as TerminalIcon } from 'lucide-react';
+
 
 export function TradeTerminal() {
   const logs = [

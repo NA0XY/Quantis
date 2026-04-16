@@ -6,7 +6,8 @@ interface AssetsTableProps {
 }
 
 export function AssetsTable({ assets, prices }: AssetsTableProps) {
-  const assetEntries = Object.entries(assets).filter(([_, qty]) => qty > 0);
+  const assetEntries = Object.entries(assets).filter(([, qty]) => qty > 0);
+
 
   if (assetEntries.length === 0) {
     return (

@@ -65,7 +65,8 @@ export const strategyService = {
     return data;
   },
 
-  async logTrades(trades: any[]) {
+  async logTrades(trades: { symbol: string, action: 'BUY' | 'SELL', price: number, amount: number, timestamp?: string }[]) {
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;

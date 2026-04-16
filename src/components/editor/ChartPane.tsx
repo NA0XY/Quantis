@@ -1,7 +1,7 @@
-"use client";
+import React, { useRef, useState, useEffect } from 'react';
+import { createChart, ColorType, CandlestickSeries, IChartApi, ISeriesApi, SeriesMarker, Time } from 'lightweight-charts';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, CandlestickSeries, createSeriesMarkers } from 'lightweight-charts';
+
 
 const SYMBOLS = [
   "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "MATICUSDT", 
@@ -11,25 +11,27 @@ const SYMBOLS = [
   "STXUSDT", "SUIUSDT", "SEIUSDT", "TIAUSDT", "FETUSDT", "AGIXUSDT", "WLDUSDT", "ORDIUSDT", "PEPEUSDT"
 ];
 
-interface TradeMarker {
-  time: number;
-  position: 'aboveBar' | 'belowBar';
-  color: string;
-  shape: 'arrowUp' | 'arrowDown';
-  text: string;
+interface Candle {
+  time: Time;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
 }
 
 interface ChartPaneProps {
-  markers?: TradeMarker[];
-  onDataLoaded?: (data: any[]) => void;
+  markers?: SeriesMarker<Time>[];
+  onDataLoaded?: (data: unknown[]) => void;
   selectedSymbol?: string;
 }
 
+
 export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartPaneProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<any>(null);
-  const candleSeriesRef = useRef<any>(null);
-  const markerPluginRef = useRef<any>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const candleSeriesRef = useRef<ISeriesApi<"Candlestick", Time> | null>(null);
+
+
   const [symbol, setSymbol] = useState(selectedSymbol || "BTCUSDT");
   const [isLoading, setIsLoading] = useState(true);
   const [priceInfo, setPriceInfo] = useState({ price: "0.00", change: "0.00" });
@@ -38,19 +40,33 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
     if (selectedSymbol) setSymbol(selectedSymbol);
   }, [selectedSymbol]);
 
+  // Handle Markers Update
   useEffect(() => {
-    if (markerPluginRef.current && markers) {
-      try {
-        markerPluginRef.current.setMarkers(markers);
-      } catch (e) {
-        console.error("Error setting markers:", e);
-      }
+    if (candleSeriesRef.current) {
+      const series = candleSeriesRef.current as unknown as { setMarkers: (m: SeriesMarker<Time>[]) => void };
+      series.setMarkers(markers);
     }
-  }, [markers]);
+  }, [markers, candleSeriesRef]);
 
+
+
+
+  // Chart Cleanup
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+        candleSeriesRef.current = null;
+      }
+    };
+  }, []);
+
+  // Main Chart Logic
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    // Initialize Chart
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: '#0a0a0a' },
@@ -78,11 +94,16 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
       wickUpColor: '#FF90E8',
     });
 
-    // V5 Marker Plugin Initialization
-    const markerPlugin = createSeriesMarkers(candleSeries, markers as any);
+    if (markers.length > 0) {
+      const series = candleSeries as unknown as { setMarkers: (m: SeriesMarker<Time>[]) => void };
+      series.setMarkers(markers);
+    }
     
-    candleSeriesRef.current = candleSeries;
-    markerPluginRef.current = markerPlugin;
+    candleSeriesRef.current = candleSeries as unknown as ISeriesApi<"Candlestick", Time>;
+
+
+
+
     chartRef.current = chart;
 
     const fetchData = async () => {
@@ -91,7 +112,7 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
         const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1m&limit=200`);
         const result = await response.json();
         
-        const formattedData = result.map((d: any) => ({
+        const formattedData: Candle[] = result.map((d: [number, string, string, string, string]) => ({
           time: d[0] / 1000,
           open: parseFloat(d[1]),
           high: parseFloat(d[2]),
@@ -127,7 +148,9 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
     fetchData();
 
     const handleResize = () => {
-      chart.applyOptions({ width: chartContainerRef.current!.clientWidth });
+      if (chartContainerRef.current) {
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -135,11 +158,11 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
-      candleSeriesRef.current = null;
-      markerPluginRef.current = null;
       chartRef.current = null;
+      candleSeriesRef.current = null;
     };
-  }, [symbol]);
+  }, [symbol, markers, onDataLoaded]);
+
 
   return (
     <div className="flex-[0.6] flex flex-col min-h-0 bg-[#0a0a0a] border-b-4 border-ink relative overflow-hidden">

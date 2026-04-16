@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import gsap from 'gsap';

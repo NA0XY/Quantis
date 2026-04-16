@@ -7,6 +7,9 @@ import { ChartPane } from '@/components/editor/ChartPane';
 import { Terminal } from '@/components/editor/Terminal';
 import { strategyService } from '@/lib/services/strategy';
 import { useSearchParams } from 'next/navigation';
+import { Time, SeriesMarker } from 'lightweight-charts';
+
+
 
 const DEFAULT_STRATEGY = `# Quantis High-Frequency Strategy v2.1
 
@@ -38,16 +41,34 @@ export default function EditorPage() {
   );
 }
 
+interface SimulationResult {
+  success: boolean;
+  metrics?: {
+    final_balance: number;
+    final_assets: Record<string, number>;
+    max_drawdown: number;
+    win_rate: number;
+    total_trades: number;
+    net_profit: number;
+  };
+  error?: string;
+}
+
+
 function EditorContent() {
   const searchParams = useSearchParams();
   const [strategyId, setStrategyId] = useState<string | null>(null);
   const [strategyName, setStrategyName] = useState("UNNAMED_STRATEGY");
   const [code, setCode] = useState(DEFAULT_STRATEGY);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [rawChartData, setRawChartData] = useState<any[]>([]);
+  const [rawChartData, setRawChartData] = useState<unknown[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
-  const [backtestResults, setBacktestResults] = useState<any>(null);
-  const [markers, setMarkers] = useState<any[]>([]);
+
+
+  const [backtestResults, setBacktestResults] = useState<SimulationResult | null>(null);
+  const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
+
+
 
   const [isActive, setIsActive] = useState(false);
 
@@ -67,9 +88,11 @@ function EditorContent() {
             setIsActive(data.is_active);
             setLogs(prev => [...prev, `SUCCESS: Loaded "${data.name}" configuration.`]);
           }
-        } catch (err: any) {
-          setLogs(prev => [...prev, `ERROR: Failed to load strategy - ${err.message}`]);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          setLogs(prev => [...prev, `ERROR: Failed to load strategy - ${message}`]);
         }
+
       };
       loadStrategy();
     }
@@ -86,9 +109,11 @@ function EditorContent() {
       });
       setStrategyId(result.id);
       setLogs(prev => [...prev, `SUCCESS: Strategy "${strategyName}" saved!`]);
-    } catch (err: any) {
-      setLogs(prev => [...prev, `ERROR: Failed to save strategy - ${err.message}`]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setLogs(prev => [...prev, `ERROR: Failed to save strategy - ${message}`]);
     }
+
   };
 
   const handleToggleLive = async () => {
@@ -104,15 +129,18 @@ function EditorContent() {
           code: code,
           is_active: nextActive
         });
-      } catch (err: any) {
-        setLogs(prev => [...prev, `ERROR: Failed to update live status - ${err.message}`]);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setLogs(prev => [...prev, `ERROR: Failed to update live status - ${message}`]);
       }
+
     }
   };
 
-  const handleDataLoaded = useCallback((data: any[]) => {
+  const handleDataLoaded = useCallback((data: unknown[]) => {
     setRawChartData(data);
   }, []);
+
 
   const handleRun = async () => {
     setIsExecuting(true);
@@ -154,14 +182,16 @@ function EditorContent() {
         }
 
         // Convert trades to chart markers
-        const tradeMarkers = result.trades.map((t: any) => ({
-          time: t.time / 1000,
+        const tradeMarkers = result.trades.map((t: { time: number, action: 'BUY' | 'SELL' }) => ({
+          time: (t.time / 1000) as Time,
+
           position: t.action === 'BUY' ? 'belowBar' : 'aboveBar',
           color: t.action === 'BUY' ? '#FF90E8' : '#fff',
           shape: t.action === 'BUY' ? 'arrowUp' : 'arrowDown',
           text: t.action
         }));
         setMarkers(tradeMarkers);
+
       } else {
         setBacktestResults({
           success: false,
@@ -169,13 +199,15 @@ function EditorContent() {
         });
         if (result.logs) setLogs(prev => [...prev, ...result.logs]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       setBacktestResults({
         success: false,
         error: "Failed to connect to simulation worker. Is wrangler running?"
       });
-      setLogs(prev => [...prev, `ERROR: ${error.message}`]);
-    } finally {
+      setLogs(prev => [...prev, `ERROR: ${message}`]);
+    }
+ finally {
       setIsExecuting(false);
     }
   };

@@ -8,7 +8,8 @@ import { LeaderboardEntry } from '@/lib/services/leaderboard';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export function RankingTable({ rankings, loading }: { rankings: LeaderboardEntry[], loading: boolean }) {
+export function RankingTable({ rankings }: { rankings: LeaderboardEntry[], loading?: boolean }) {
+
   const tableRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
@@ -41,12 +42,13 @@ export function RankingTable({ rankings, loading }: { rankings: LeaderboardEntry
         </thead>
         <tbody>
           {rankings.map((r, i) => {
-            let rowBg = i % 2 === 0 ? "bg-chalk" : "bg-sky/20";
+            const rowBg = i % 2 === 0 ? "bg-chalk" : "bg-sky/20";
             let rankStyle = "font-black text-xl text-ink";
             
             if (r.rank === 1) rankStyle = "bg-primary border-4 border-ink shadow-[2px_2px_0_#111] mx-auto flex items-center justify-center w-10 h-10 font-black text-xl text-ink";
             else if (r.rank === 2) rankStyle = "bg-[#b2f2bb] border-4 border-ink shadow-[2px_2px_0_#111] mx-auto flex items-center justify-center w-10 h-10 font-black text-xl text-ink";
             else if (r.rank === 3) rankStyle = "bg-[#ffd8a8] border-4 border-ink shadow-[2px_2px_0_#111] mx-auto flex items-center justify-center w-10 h-10 font-black text-xl text-ink";
+
             
             return (
               <tr key={r.id} className={`${rowBg} transition-all hover:bg-primary/20 group`}>

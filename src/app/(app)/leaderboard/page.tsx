@@ -18,7 +18,7 @@ export default function LeaderboardPage() {
   const [rankings, setRankings] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchLearderboard = async () => {
+  const fetchLeaderboard = React.useCallback(async () => {
     setLoading(true);
     try {
       const data = await leaderboardService.getLeaderboard(timeframe);
@@ -28,11 +28,12 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeframe]);
 
   useEffect(() => {
-    fetchLearderboard();
-  }, [timeframe]);
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
+
 
   useGSAP(() => {
     if (loading) return;

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Play, Code, Trash2, Activity, Clock } from 'lucide-react';
+import { Code, Trash2, Activity, Clock } from 'lucide-react';
+
 import Link from 'next/link';
 
 interface StrategyCardProps {

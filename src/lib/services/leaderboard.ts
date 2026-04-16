@@ -2,6 +2,9 @@ import { createClient } from '../supabase/client';
 
 const supabase = createClient();
 
+export type Timeframe = 'ALL' | '24H' | '7D';
+
+
 export interface LeaderboardEntry {
   id: string;
   username: string;
@@ -12,7 +15,10 @@ export interface LeaderboardEntry {
   rank?: number;
 }
 
-export type Timeframe = '24H' | '7D' | 'ALL';
+interface Snapshot {
+  user_id: string;
+  equity: number;
+}
 
 export const leaderboardService = {
   async getLeaderboard(timeframe: Timeframe = 'ALL'): Promise<LeaderboardEntry[]> {
@@ -33,7 +39,7 @@ export const leaderboardService = {
     const activeUserIds = new Set(activeBots.map(b => b.user_id));
 
     // 3. Historical Data for ROI
-    let snapshots: any[] = [];
+    let snapshots: Snapshot[] = [];
     if (timeframe !== 'ALL') {
       const days = timeframe === '24H' ? 1 : 7;
       const dateLimit = new Date();
@@ -42,13 +48,15 @@ export const leaderboardService = {
       // Find the snapshot closest to the limit
       const { data: pastSnapshots, error: snapshotError } = await supabase
         .from('portfolio_snapshots')
-        .select('*')
+        .select('user_id, equity')
         .gte('timestamp', dateLimit.toISOString())
         .order('timestamp', { ascending: true });
       
       if (snapshotError) throw snapshotError;
-      snapshots = pastSnapshots;
+      snapshots = (pastSnapshots as unknown) as Snapshot[];
+
     }
+
 
     // 4. Calculate entries using fixed $10k base
     const FIXED_BASE = 10000;

@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Play, Square, Save, Share2, Zap } from 'lucide-react';
+import { Play, Save, Share2, Zap } from 'lucide-react';
+
 
 interface EditorToolbarProps {
   onRun?: () => void;

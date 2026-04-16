@@ -3,18 +3,11 @@
 import React, { useEffect, useRef } from 'react';
 import { Terminal as TerminalIcon, Cpu, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
-interface Log {
-  type: 'info' | 'error' | 'success' | 'warn';
-  message: string;
-  timestamp: string;
-}
-
 interface TerminalProps {
+
   logs: string[];
   results?: {
     success: boolean;
-    final_value?: number;
-    trades_count?: number;
     error?: string;
     metrics?: {
       max_drawdown: number;
@@ -23,6 +16,7 @@ interface TerminalProps {
       net_profit: number;
     };
   } | null;
+
 }
 
 export function Terminal({ logs, results }: TerminalProps) {

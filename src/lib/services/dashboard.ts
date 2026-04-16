@@ -72,9 +72,10 @@ export const dashboardService = {
       const priceMap: Record<string, number> = {};
       
       if (Array.isArray(data)) {
-        data.forEach((ticker: any) => {
+        data.forEach((ticker: { symbol: string, price: string }) => {
           priceMap[ticker.symbol] = parseFloat(ticker.price);
         });
+
       } else if (data.symbol && data.price) {
         // Single symbol response
         priceMap[data.symbol] = parseFloat(data.price);

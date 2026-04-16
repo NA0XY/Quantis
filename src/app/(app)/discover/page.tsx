@@ -6,11 +6,12 @@ import { Card } from '@/components/ui/Card';
 import { Loader2, TrendingUp, Zap, Users, ArrowUpRight } from 'lucide-react';
 import { discoverService, PublicStrategy } from '@/lib/services/discover';
 import Link from 'next/link';
-import gsap from 'gsap';
+
 
 export default function DiscoverPage() {
   const [trending, setTrending] = useState<PublicStrategy[]>([]);
-  const [market, setMarket] = useState<any[]>([]);
+  const [market, setMarket] = useState<{ symbol: string, lastPrice: string, priceChangePercent: string }[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -104,7 +105,8 @@ export default function DiscoverPage() {
             </div>
 
             <div className="bg-ink p-8 shadow-[12px_12px_0_#111] space-y-6">
-              {market.slice(0, 5).map((m: any) => (
+              {market.slice(0, 5).map((m) => (
+
                 <div key={m.symbol} className="flex items-center justify-between border-b-2 border-chalk/10 pb-4 last:border-0 last:pb-0">
                   <div className="flex flex-col">
                     <span className="text-chalk font-black uppercase tracking-tight text-lg">{m.symbol.replace('USDT', '')} <span className="text-chalk/40 text-xs">/ USDT</span></span>
