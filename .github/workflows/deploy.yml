@@ -64,7 +64,7 @@ jobs:
           fi
 
       - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy .vercel/output --project-name=quantis
+        run: npx wrangler pages deploy .vercel/output --project-name=quantis-platform
         env:
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
