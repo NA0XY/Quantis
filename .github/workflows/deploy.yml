@@ -22,7 +22,7 @@ jobs:
         run: npm install -g wrangler
           
       - name: Deploy Worker
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.worker.toml --non-interactive
         env:
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
@@ -64,8 +64,9 @@ jobs:
           fi
 
       - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy .vercel/output --project-name=quantis-platform
+        run: npx wrangler pages deploy .vercel/output --project-name=quantis-platform --branch main --non-interactive
         env:
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
