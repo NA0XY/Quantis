@@ -49,7 +49,8 @@ jobs:
           node-version: 22
           
       - name: Deploy Worker
-        run: npx wrangler deploy --config wrangler.worker.toml --non-interactive
+        run: npx wrangler deploy --config wrangler.worker.toml
+
         env:
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
@@ -84,7 +85,8 @@ jobs:
           NPM_CONFIG_LEGACY_PEER_DEPS: true
         
       - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy .vercel/output --project-name=quantis-platform --branch main --non-interactive
+        run: npx wrangler pages deploy .vercel/output --project-name=quantis-platform --branch main
+
         env:
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
