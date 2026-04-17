@@ -7,8 +7,6 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const runtime = 'edge';
-
 export const metadata: Metadata = {
   title: "Quantis | Crypto Algorithmic Trading Simulator",
   description: "Your trading strategy. Proven by data.",

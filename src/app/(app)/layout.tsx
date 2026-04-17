@@ -1,7 +1,5 @@
 import React from 'react';
 
-export const runtime = 'edge';
-
 import { AppSidebar } from '@/components/app/AppSidebar';
 
 

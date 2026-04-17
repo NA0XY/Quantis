@@ -1,7 +1,5 @@
 import React from 'react';
 
-export const runtime = 'edge';
-
 import { FloatingNav } from '@/components/landing/FloatingNav';
 
 import { HeroSection } from '@/components/landing/HeroSection';
