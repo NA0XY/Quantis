@@ -103,32 +103,58 @@ export default function MarketsPage() {
     loadInitialTickers();
 
     const streams = SYMBOLS.map((symbol) => `${symbol.toLowerCase()}@ticker`).join('/');
-    const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+    let socket: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    socket.onopen = () => setIsTickerLive(true);
-    socket.onclose = () => setIsTickerLive(false);
-    socket.onerror = () => setIsTickerLive(false);
-    socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data);
-      const ticker = payload.data;
-      if (!ticker?.s) return;
-
-      setTickers((current) => ({
-        ...current,
-        [ticker.s]: {
-          symbol: ticker.s,
-          lastPrice: Number(ticker.c),
-          priceChangePercent: Number(ticker.P),
-          quoteVolume: Number(ticker.q),
-          highPrice: Number(ticker.h),
-          lowPrice: Number(ticker.l),
-        }
-      }));
+    const scheduleReconnect = (attempt: number) => {
+      if (cancelled) return;
+      const delay = Math.min(30_000, 1000 * 2 ** attempt);
+      reconnectTimer = setTimeout(() => connectTickerStream(attempt + 1), delay);
     };
+
+    const connectTickerStream = (attempt = 0) => {
+      if (cancelled) return;
+
+      socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+
+      socket.onopen = () => setIsTickerLive(true);
+      socket.onclose = () => {
+        setIsTickerLive(false);
+        scheduleReconnect(attempt);
+      };
+      socket.onerror = () => {
+        setIsTickerLive(false);
+        socket?.close();
+      };
+      socket.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          const ticker = payload.data;
+          if (!ticker?.s) return;
+
+          setTickers((current) => ({
+            ...current,
+            [ticker.s]: {
+              symbol: ticker.s,
+              lastPrice: Number(ticker.c),
+              priceChangePercent: Number(ticker.P),
+              quoteVolume: Number(ticker.q),
+              highPrice: Number(ticker.h),
+              lowPrice: Number(ticker.l),
+            }
+          }));
+        } catch (error) {
+          console.error('Failed to parse ticker stream message:', error);
+        }
+      };
+    };
+
+    connectTickerStream();
 
     return () => {
       cancelled = true;
-      socket.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      socket?.close();
     };
   }, []);
 
@@ -195,22 +221,43 @@ export default function MarketsPage() {
 
     loadCandles();
 
-    const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${selectedSymbol.toLowerCase()}@kline_1m`);
-    socket.onmessage = (event) => {
-      if (disposed || !seriesRef.current) return;
+    let socket: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-      const payload = JSON.parse(event.data);
-      const candle = payload.k;
-      if (!candle) return;
-
-      seriesRef.current.update({
-        time: (candle.t / 1000) as Time,
-        open: Number(candle.o),
-        high: Number(candle.h),
-        low: Number(candle.l),
-        close: Number(candle.c),
-      });
+    const scheduleReconnect = (attempt: number) => {
+      if (disposed) return;
+      const delay = Math.min(30_000, 1000 * 2 ** attempt);
+      reconnectTimer = setTimeout(() => connectCandleStream(attempt + 1), delay);
     };
+
+    const connectCandleStream = (attempt = 0) => {
+      if (disposed) return;
+
+      socket = new WebSocket(`wss://stream.binance.com:9443/ws/${selectedSymbol.toLowerCase()}@kline_1m`);
+      socket.onclose = () => scheduleReconnect(attempt);
+      socket.onerror = () => socket?.close();
+      socket.onmessage = (event) => {
+        if (disposed || !seriesRef.current) return;
+
+        try {
+          const payload = JSON.parse(event.data);
+          const candle = payload.k;
+          if (!candle) return;
+
+          seriesRef.current.update({
+            time: (candle.t / 1000) as Time,
+            open: Number(candle.o),
+            high: Number(candle.h),
+            low: Number(candle.l),
+            close: Number(candle.c),
+          });
+        } catch (error) {
+          console.error('Failed to parse candle stream message:', error);
+        }
+      };
+    };
+
+    connectCandleStream();
 
     const handleResize = () => {
       if (!disposed && chartContainerRef.current) {
@@ -218,12 +265,14 @@ export default function MarketsPage() {
       }
     };
 
-    window.addEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(chartContainerRef.current);
 
     return () => {
       disposed = true;
-      window.removeEventListener('resize', handleResize);
-      socket.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      resizeObserver.disconnect();
+      socket?.close();
       chartRef.current = null;
       seriesRef.current = null;
       chart.remove();

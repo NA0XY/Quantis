@@ -114,9 +114,12 @@ async function getActiveAlgorithms(env: Env) {
 }
 
 async function runSimulation(env: Env, algorithm: Algorithm, symbol: string): Promise<SuccessfulSimulationResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(`${symbol}: simulation worker timed out after 30s`), 30_000);
   const request = new Request(env.SIM_WORKER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal: controller.signal,
     body: JSON.stringify({
       code: algorithm.code,
       symbol,
@@ -125,9 +128,19 @@ async function runSimulation(env: Env, algorithm: Algorithm, symbol: string): Pr
     })
   });
 
-  const response = env.SIM_ENGINE
-    ? await env.SIM_ENGINE.fetch(request)
-    : await fetch(request);
+  let response: Response;
+  try {
+    response = env.SIM_ENGINE
+      ? await env.SIM_ENGINE.fetch(request)
+      : await fetch(request);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(`${symbol}: simulation worker timed out after 30s`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     throw new Error(`${symbol}: simulation worker returned HTTP ${response.status}`);

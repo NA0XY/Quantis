@@ -26,7 +26,6 @@ export function AssetsTable({ assets, prices }: AssetsTableProps) {
             <th className="px-6 py-4 font-black">Qty Held</th>
             <th className="px-6 py-4 font-black">Current Price</th>
             <th className="px-6 py-4 font-black">Value (USD)</th>
-            <th className="px-6 py-4 font-black text-right">Market Cap Rank</th>
           </tr>
         </thead>
         <tbody>
@@ -49,9 +48,6 @@ export function AssetsTable({ assets, prices }: AssetsTableProps) {
                     ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                     : '-'
                   }
-                </td>
-                <td className={`px-6 py-4 font-mono font-black text-xl text-right text-ink/20 italic`}>
-                  #--
                 </td>
               </tr>
             );

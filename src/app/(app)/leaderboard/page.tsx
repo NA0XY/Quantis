@@ -169,7 +169,7 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      <YourRankBanner isAuthenticated={isAuthenticated} />
+      <YourRankBanner isAuthenticated={isAuthenticated} totalUsers={rankings.length} />
     </div>
   );
 }

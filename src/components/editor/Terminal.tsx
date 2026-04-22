@@ -3,9 +3,14 @@
 import React, { useEffect, useRef } from 'react';
 import { Terminal as TerminalIcon, Cpu, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
+export interface TerminalLog {
+  text: string;
+  timestamp: string;
+}
+
 interface TerminalProps {
 
-  logs: string[];
+  logs: TerminalLog[];
   results?: {
     success: boolean;
     error?: string;
@@ -55,9 +60,11 @@ export function Terminal({ logs, results }: TerminalProps) {
         )}
 
         {logs.map((log, i) => (
-          <div key={i} className="text-chalk/80 text-xs flex space-x-3">
-            <span className="text-primary/40 flex-shrink-0">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
-            <span className="break-all">{log}</span>
+          <div key={`${log.timestamp}-${i}`} className="text-chalk/80 text-xs flex space-x-3">
+            <span className="text-primary/40 flex-shrink-0">
+              [{new Date(log.timestamp).toLocaleTimeString([], { hour12: false })}]
+            </span>
+            <span className="break-all">{log.text}</span>
           </div>
         ))}
 

@@ -25,14 +25,16 @@ export function StrategyCard({ id, name, isActive, lastRun, onToggle, onDelete }
             <span>Updated: {lastRun ? new Date(lastRun).toLocaleDateString() : 'Never'}</span>
           </div>
         </div>
-        <div 
+        <button
+          type="button"
           onClick={() => onToggle(id, !isActive)}
+          aria-pressed={isActive}
           className={`cursor-pointer px-3 py-1 border-2 border-ink font-black text-[10px] uppercase tracking-widest transition-all ${
             isActive ? 'bg-[#00c853] text-white shadow-[2px_2px_0_#111]' : 'bg-chalk text-ink/30 grayscale opacity-50'
           }`}
         >
           {isActive ? 'Live' : 'Draft'}
-        </div>
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6 pt-4 border-t-2 border-ink/10">
@@ -58,7 +60,9 @@ export function StrategyCard({ id, name, isActive, lastRun, onToggle, onDelete }
           <span>Edit Script</span>
         </Link>
         <button 
+          type="button"
           onClick={() => onDelete(id)}
+          aria-label={`Delete ${name}`}
           className="p-2 border-2 border-ink hover:bg-red-500 hover:text-white transition-all text-ink/40"
         >
           <Trash2 className="w-4 h-4" />

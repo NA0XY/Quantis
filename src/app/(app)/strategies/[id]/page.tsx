@@ -122,8 +122,9 @@ export default function StrategyDetailPage() {
   useEffect(() => {
     if (!stats?.strategy.is_active || stats.trade_count > 0 || executing) return;
     if (autoRunKey.current === stats.strategy.id) return;
+    if (!stats.strategy.id) return;
 
-    autoRunKey.current = stats.strategy.id || null;
+    autoRunKey.current = stats.strategy.id;
     executeLiveCycle();
   }, [executeLiveCycle, executing, stats]);
 

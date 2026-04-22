@@ -25,6 +25,20 @@ export function EditorToolbar({
   strategyName, 
   onNameChange 
 }: EditorToolbarProps) {
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+
+    if (navigator.share) {
+      await navigator.share({
+        title: strategyName || 'Quantis strategy',
+        url: shareUrl,
+      });
+      return;
+    }
+
+    await navigator.clipboard.writeText(shareUrl);
+  };
+
   return (
     <div className="h-16 bg-chalk border-b-4 border-ink flex items-center justify-between px-6 shrink-0 relative z-20">
       <div className="flex items-center space-x-6">
@@ -81,12 +95,19 @@ export function EditorToolbar({
         </div>
 
         <button 
+          type="button"
           onClick={onSave}
+          aria-label="Save strategy"
           className="p-3 bg-chalk border-4 border-ink shadow-[3px_3px_0_#111] hover:bg-sky transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
         >
           <Save className="w-5 h-5 text-ink" />
         </button>
-        <button className="p-3 bg-chalk border-4 border-ink shadow-[3px_3px_0_#111] hover:bg-sky transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none">
+        <button
+          type="button"
+          onClick={handleShare}
+          aria-label="Share strategy link"
+          className="p-3 bg-chalk border-4 border-ink shadow-[3px_3px_0_#111] hover:bg-sky transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+        >
           <Share2 className="w-5 h-5 text-ink" />
         </button>
       </div>

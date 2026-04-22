@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import { CodeEditorPane } from '@/components/editor/CodeEditorPane';
 import { ChartPane } from '@/components/editor/ChartPane';
-import { Terminal } from '@/components/editor/Terminal';
+import { Terminal, TerminalLog } from '@/components/editor/Terminal';
 import { strategyService } from '@/lib/services/strategy';
 import { MARKET_SYMBOLS } from '@/lib/trading/markets';
 import { formatScannerMoney, scanMarkets } from '@/lib/trading/marketScanner';
@@ -36,6 +36,17 @@ def on_candle(candle, portfolio):
         print(f"Reversal SELL: close={close:.2f}, strength={body_strength:.2f}")
         portfolio['sell'](amount=1.0)
 `;
+
+function createLog(text: string): TerminalLog {
+  return {
+    text,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function createLogs(lines: string[]): TerminalLog[] {
+  return lines.map(createLog);
+}
 
 export default function EditorPage() {
   return (
@@ -70,7 +81,7 @@ function EditorContent() {
   const [code, setCode] = useState(DEFAULT_STRATEGY);
   const [isExecuting, setIsExecuting] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string>("BTCUSDT");
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<TerminalLog[]>([]);
 
 
   const [backtestResults, setBacktestResults] = useState<SimulationResult | null>(null);
@@ -86,7 +97,7 @@ function EditorContent() {
     const isNewStrategy = searchParams.get('new') === '1';
 
     if (id) {
-      setLogs(prev => [...prev, `Loading algorithm config [${id}]...`]);
+      setLogs(prev => [...prev, createLog(`Loading algorithm config [${id}]...`)]);
       const loadStrategy = async () => {
         try {
           const data = await strategyService.getStrategyById(id);
@@ -96,11 +107,11 @@ function EditorContent() {
             setStrategyName(data.name);
             setCode(data.code);
             setIsActive(data.is_active);
-            setLogs(prev => [...prev, `SUCCESS: Loaded "${data.name}" configuration.`]);
+            setLogs(prev => [...prev, createLog(`SUCCESS: Loaded "${data.name}" configuration.`)]);
           }
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
-          setLogs(prev => [...prev, `ERROR: Failed to load strategy - ${message}`]);
+          setLogs(prev => [...prev, createLog(`ERROR: Failed to load strategy - ${message}`)]);
         }
 
       };
@@ -138,15 +149,15 @@ function EditorContent() {
 
   const handleSave = async () => {
     try {
-      setLogs(prev => [...prev, "Saving strategy to Quantis Secure Cloud..."]);
+      setLogs(prev => [...prev, createLog("Saving strategy to Quantis Secure Cloud...")]);
       const result = await persistStrategy(isActive);
-      setLogs(prev => [...prev, `SUCCESS: Strategy "${strategyName}" saved!`]);
+      setLogs(prev => [...prev, createLog(`SUCCESS: Strategy "${strategyName}" saved!`)]);
       if (result.is_active) {
-        setLogs(prev => [...prev, "LIVE STATE: Bot live status is persisted."]);
+        setLogs(prev => [...prev, createLog("LIVE STATE: Bot live status is persisted.")]);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      setLogs(prev => [...prev, `ERROR: Failed to save strategy - ${message}`]);
+      setLogs(prev => [...prev, createLog(`ERROR: Failed to save strategy - ${message}`)]);
     }
 
   };
@@ -154,15 +165,15 @@ function EditorContent() {
   const handleToggleLive = async () => {
     const nextActive = !isActive;
     setIsActive(nextActive);
-    setLogs(prev => [...prev, nextActive ? "ACTIVATING STRATEGY: System is now tracking live trades." : "DEACTIVATING STRATEGY: System is now in Draft mode."]);
+    setLogs(prev => [...prev, createLog(nextActive ? "ACTIVATING STRATEGY: System is now tracking live trades." : "DEACTIVATING STRATEGY: System is now in Draft mode.")]);
 
     try {
       const result = await persistStrategy(nextActive);
-      setLogs(prev => [...prev, `SUCCESS: "${result.name}" is now ${nextActive ? 'LIVE' : 'DRAFT'} and saved to Supabase.`]);
+      setLogs(prev => [...prev, createLog(`SUCCESS: "${result.name}" is now ${nextActive ? 'LIVE' : 'DRAFT'} and saved to Supabase.`)]);
     } catch (err: unknown) {
       setIsActive(!nextActive);
       const message = err instanceof Error ? err.message : String(err);
-      setLogs(prev => [...prev, `ERROR: Failed to update live status - ${message}`]);
+      setLogs(prev => [...prev, createLog(`ERROR: Failed to update live status - ${message}`)]);
     }
   };
 
@@ -175,9 +186,11 @@ function EditorContent() {
     try {
       setLogs(prev => [
         ...prev,
-        "Initializing Simulation Engine...",
-        "Connecting to Pyodide Worker...",
-        `SCANNER: Searching ${MARKET_SYMBOLS.length} tracked USDT markets for the strongest setup.`
+        ...createLogs([
+          "Initializing Simulation Engine...",
+          "Connecting to Pyodide Worker...",
+          `SCANNER: Searching ${MARKET_SYMBOLS.length} tracked USDT markets for the strongest setup.`
+        ])
       ]);
       
       const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
@@ -186,7 +199,7 @@ function EditorContent() {
           success: false,
           error: 'NEXT_PUBLIC_WORKER_URL is not set. Run `wrangler dev --config wrangler.worker.toml` and add it to .env.local'
         });
-        setLogs(prev => [...prev, 'ERROR: NEXT_PUBLIC_WORKER_URL is not configured.']);
+        setLogs(prev => [...prev, createLog('ERROR: NEXT_PUBLIC_WORKER_URL is not configured.')]);
         setIsExecuting(false);
         return;
       }
@@ -195,7 +208,7 @@ function EditorContent() {
         code,
         workerUrl,
         onBatch: (from, to, total) => {
-          setLogs(prev => [...prev, `SCANNER: Testing markets ${from}-${to}/${total}...`]);
+          setLogs(prev => [...prev, createLog(`SCANNER: Testing markets ${from}-${to}/${total}...`)]);
         }
       });
       
@@ -207,11 +220,13 @@ function EditorContent() {
         setSelectedSymbol(result.symbol);
         setLogs(prev => [
           ...prev,
-          failures.length > 0 ? `SCANNER: ${failures.length} market(s) skipped because Binance/worker rejected the symbol.` : "SCANNER: Every market responded successfully.",
-          `BEST MARKET: ${result.symbol} won with ${formatScannerMoney(result.metrics.net_profit)} net PnL.`,
-          ...topMarkets,
-          ...result.logs,
-          result.trades.length === 0 ? "NO SIGNAL: Strategy ran successfully, but no buy/sell conditions were met for the loaded candles." : `SIGNALS: ${result.trades.length} trade(s) generated.`
+          ...createLogs([
+            failures.length > 0 ? `SCANNER: ${failures.length} market(s) skipped because Binance/worker rejected the symbol.` : "SCANNER: Every market responded successfully.",
+            `BEST MARKET: ${result.symbol} won with ${formatScannerMoney(result.metrics.net_profit)} net PnL.`,
+            ...topMarkets,
+            ...result.logs,
+            result.trades.length === 0 ? "NO SIGNAL: Strategy ran successfully, but no buy/sell conditions were met for the loaded candles." : `SIGNALS: ${result.trades.length} trade(s) generated.`
+          ])
         ]);
         setBacktestResults({
           success: true,
@@ -226,13 +241,13 @@ function EditorContent() {
             activeStrategyId = saved.id;
           }
 
-          setLogs(prev => [...prev, "SYSTEM: Strategy is ACTIVE. Persisting results to Supabase..."]);
+          setLogs(prev => [...prev, createLog("SYSTEM: Strategy is ACTIVE. Persisting results to Supabase...")]);
           await strategyService.logTrades(result.trades, activeStrategyId);
           await strategyService.updatePortfolio(
             result.metrics.final_balance,
             result.metrics.final_assets
           );
-          setLogs(prev => [...prev, "SUCCESS: Ledger and Portfolio synchronized."]);
+          setLogs(prev => [...prev, createLog("SUCCESS: Ledger and Portfolio synchronized.")]);
         }
 
         // Convert trades to chart markers
@@ -252,7 +267,7 @@ function EditorContent() {
         success: false,
         error: "Failed to connect to simulation worker. Is wrangler running?"
       });
-      setLogs(prev => [...prev, `ERROR: ${message}`]);
+      setLogs(prev => [...prev, createLog(`ERROR: ${message}`)]);
     }
  finally {
       setIsExecuting(false);

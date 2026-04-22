@@ -95,7 +95,8 @@ END;
 $$;
 
 -- Trigger for auth.users
--- Note: This requires running as a superuser or via the Supabase UI SQL editor
+-- Applied in migration 20260421211500_enable_auth_user_trigger.sql.
+-- Kept commented here so schema.sql can be replayed safely in local/dev contexts.
 -- CREATE TRIGGER on_auth_user_created
 --   AFTER INSERT ON auth.users
 --   FOR EACH ROW EXECUTE FUNCTION handle_new_user();

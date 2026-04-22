@@ -149,11 +149,12 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
       }
     };
 
-    window.addEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(chartContainerRef.current);
 
     return () => {
       disposed = true;
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       markersRef.current?.detach();
       markersRef.current = null;
       chartRef.current = null;

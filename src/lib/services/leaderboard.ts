@@ -13,6 +13,7 @@ export interface LeaderboardEntry {
   roi: number;
   has_active_bot: boolean;
   rank?: number;
+  totalUsers?: number;
 }
 
 interface Snapshot {
@@ -83,7 +84,10 @@ export const leaderboardService = {
       };
     });
 
-    return entries.sort((a, b) => b.roi - a.roi).map((e, index) => ({ ...e, rank: index + 1 }));
+    const totalUsers = entries.length;
+    return entries
+      .sort((a, b) => b.roi - a.roi)
+      .map((entry, index) => ({ ...entry, rank: index + 1, totalUsers }));
   },
 
   async getMyRank(): Promise<LeaderboardEntry | null> {
