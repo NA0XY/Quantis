@@ -13,7 +13,7 @@
   },
   "vars": {
     "SUPABASE_URL": "https://wzmlrxobdxvhfcbbbmcc.supabase.co",
-    "SIM_WORKER_URL": "https://quantis-sim-engine.successstairway52.workers.dev"
+    "SIM_WORKER_URL": "https://quantis-sim-engine.quantis.workers.dev"
   },
   "services": [
     {
