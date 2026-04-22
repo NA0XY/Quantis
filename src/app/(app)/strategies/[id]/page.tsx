@@ -162,22 +162,22 @@ export default function StrategyDetailPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-10">
           <main className="space-y-8 min-w-0">
-            <header className="bg-chalk border-8 border-ink shadow-[12px_12px_0_#111] p-6 lg:p-8">
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                <div className="min-w-0">
+            <header className="bg-chalk border-8 border-ink shadow-[12px_12px_0_#111] p-6 lg:p-8 overflow-hidden">
+              <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_300px] gap-8 items-start">
+                <div className="min-w-0 max-w-full">
                   <Badge className="mb-5 bg-ink text-primary border-2 border-primary shadow-[4px_4px_0_#000] uppercase tracking-widest font-black">
                     Strategy Analyst v1.0
                   </Badge>
-                  <h1 className="text-5xl lg:text-7xl font-black text-ink uppercase tracking-tighter leading-none break-words">
+                  <h1 className="text-[clamp(3rem,7vw,4.5rem)] font-black text-ink uppercase tracking-tighter leading-none break-words">
                     {strategy.name}
                   </h1>
-                  <div className="mt-5 flex flex-wrap gap-3 font-mono text-[11px] font-black uppercase tracking-widest text-ink/50">
-                    <span>UID: {strategy.id}</span>
-                    <span>Owner: {stats.username}</span>
+                  <div className="mt-5 grid gap-2 font-mono text-[11px] font-black uppercase tracking-widest text-ink/50">
+                    <span className="min-w-0 break-all leading-relaxed">UID: {strategy.id}</span>
+                    <span className="min-w-0 break-all leading-relaxed">Owner: {stats.username}</span>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-stretch gap-3 shrink-0">
+                <div className="flex w-full max-w-[300px] flex-col items-stretch gap-3 2xl:justify-self-end">
                   <div className={`flex items-center justify-center space-x-3 px-5 py-3 border-4 border-ink shadow-[6px_6px_0_#111] font-black uppercase tracking-widest ${
                     strategy.is_active ? 'bg-primary text-ink' : 'bg-sky text-ink/50'
                   }`}>
@@ -200,28 +200,28 @@ export default function StrategyDetailPage() {
             </header>
 
             <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-primary border-8 border-ink p-7 shadow-[10px_10px_0_#111]">
+              <div className="bg-primary border-8 border-ink p-7 shadow-[10px_10px_0_#111] min-w-0 overflow-hidden">
                 <div className="flex items-center space-x-3 text-ink/40 mb-3">
                   <BarChart3 size={18} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Growth ROI</span>
                 </div>
-                <div className="text-5xl font-black text-ink">{stats.roi >= 0 ? '+' : ''}{stats.roi}%</div>
+                <div className="text-[clamp(2.6rem,5vw,3.25rem)] leading-none font-black text-ink tabular-nums tracking-tighter break-words">{stats.roi >= 0 ? '+' : ''}{stats.roi}%</div>
               </div>
 
-              <div className="bg-chalk border-8 border-ink p-7 shadow-[10px_10px_0_#111]">
+              <div className="bg-chalk border-8 border-ink p-7 shadow-[10px_10px_0_#111] min-w-0 overflow-hidden">
                 <div className="flex items-center space-x-3 text-ink/40 mb-3">
                   <Activity size={18} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Sell Ratio</span>
                 </div>
-                <div className="text-5xl font-black text-ink">{stats.success_rate}%</div>
+                <div className="text-[clamp(2.6rem,5vw,3.25rem)] leading-none font-black text-ink tabular-nums tracking-tighter break-words">{stats.success_rate}%</div>
               </div>
 
-              <div className="bg-ink border-8 border-ink p-7 shadow-[10px_10px_0_#111]">
+              <div className="bg-ink border-8 border-ink p-7 shadow-[10px_10px_0_#111] min-w-0 overflow-hidden">
                 <div className="flex items-center space-x-3 text-primary/40 mb-3">
                   <DollarSign size={18} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Total PNL</span>
                 </div>
-                <div className="text-5xl font-black text-primary">{formatUsd(stats.total_pnl)}</div>
+                <div className="text-[clamp(2.35rem,4.5vw,3.25rem)] leading-none font-black text-primary tabular-nums tracking-tighter break-words">{formatUsd(stats.total_pnl)}</div>
               </div>
             </section>
 
