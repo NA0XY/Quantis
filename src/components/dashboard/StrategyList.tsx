@@ -74,7 +74,7 @@ export function StrategyList({ className = "grid grid-cols-1 gap-8" }: StrategyL
 
       {/* New Strategy CTA */}
       <Link 
-        href="/editor" 
+        href="/editor?new=1"
         className="flex flex-col items-center justify-center border-4 border-dashed border-ink/20 p-6 min-h-[180px] hover:border-primary hover:bg-primary/5 transition-all group overflow-hidden"
       >
         <div className="w-12 h-12 rounded-full border-4 border-dashed border-ink/20 flex items-center justify-center mb-4 group-hover:border-primary group-hover:bg-primary transition-all shrink-0">

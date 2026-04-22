@@ -83,9 +83,15 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 p-8 lg:p-12 bg-sky flex items-center justify-center min-h-screen">
-        <div className="text-2xl font-black text-ink animate-bounce uppercase tracking-tighter">
-          Loading Quantis Intelligence...
+      <div className="flex-1 p-8 lg:p-12 bg-sky min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-16 w-64 bg-ink/10 border-4 border-ink/10 mb-12 animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            {[...Array(4)].map((_, index) => (
+              <div key={index} className="h-28 bg-ink/10 border-4 border-ink/10 animate-pulse" />
+            ))}
+          </div>
+          <div className="h-64 bg-ink/10 border-4 border-ink/10 animate-pulse" />
         </div>
       </div>
     );

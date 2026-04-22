@@ -1,4 +1,5 @@
 import React from 'react';
+import { MarketingBrandStamp } from '@/components/brand/MarketingBrandStamp';
 
 export default function MarketingLayout({
   children,
@@ -7,6 +8,7 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="min-h-screen bg-sky">
+      <MarketingBrandStamp />
       {children}
     </div>
   );

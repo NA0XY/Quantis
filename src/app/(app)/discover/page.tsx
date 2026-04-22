@@ -62,6 +62,24 @@ export default function DiscoverPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {trending.length === 0 && (
+                <Card className="md:col-span-2 p-10 border-4 border-dashed border-ink bg-chalk/40 shadow-[10px_10px_0_#111]">
+                  <div className="max-w-xl">
+                    <div className="w-14 h-14 bg-primary border-4 border-ink shadow-[4px_4px_0_#111] flex items-center justify-center mb-6">
+                      <TrendingUp className="w-7 h-7 text-ink" />
+                    </div>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter text-ink mb-3">
+                      No strategies broadcasting yet
+                    </h3>
+                    <p className="text-ink/60 font-bold mb-6">
+                      Save a strategy from the editor and switch it to live mode. It will stay live after reloads and appear here.
+                    </p>
+                    <Link href="/editor?new=1" className="inline-flex bg-primary border-4 border-ink shadow-[4px_4px_0_#111] px-5 py-3 font-black uppercase tracking-widest text-xs hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                      Create Live Strategy
+                    </Link>
+                  </div>
+                </Card>
+              )}
               {trending.map((s) => (
                 <Card key={s.id} className="p-8 border-4 border-ink shadow-[12px_12px_00_#111] hover:shadow-[16px_16px_0_#111] hover:-translate-y-1 transition-all group bg-chalk">
                   <div className="flex justify-between items-start mb-6">

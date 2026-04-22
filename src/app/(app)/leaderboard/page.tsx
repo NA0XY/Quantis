@@ -9,6 +9,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { leaderboardService, LeaderboardEntry, Timeframe } from '@/lib/services/leaderboard';
+import { createClient } from '@/lib/supabase/client';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -17,6 +18,7 @@ export default function LeaderboardPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>('ALL');
   const [rankings, setRankings] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const fetchLeaderboard = React.useCallback(async () => {
     setLoading(true);
@@ -33,6 +35,16 @@ export default function LeaderboardPage() {
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+
+    checkAuth();
+  }, []);
 
 
   useGSAP(() => {
@@ -157,7 +169,7 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      <YourRankBanner isAuthenticated={true} />
+      <YourRankBanner isAuthenticated={isAuthenticated} />
     </div>
   );
 }

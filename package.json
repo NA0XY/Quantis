@@ -4,21 +4,26 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy:cron": "wrangler deploy --config wrangler.cron.jsonc",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
-
+    "typecheck": "tsc --noEmit",
+    "supabase:login": "supabase login",
+    "supabase:link": "supabase link",
+    "db:push": "supabase db push",
+    "db:pull": "supabase db pull",
+    "db:reset": "supabase db reset"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@monaco-editor/react": "^4.7.0",
     "@supabase/ssr": "^0.10.2",
-    "@supabase/supabase-js": "^2.103.2",
+    "@supabase/supabase-js": "^2.104.0",
     "gsap": "^3.15.0",
     "lightweight-charts": "^5.1.0",
     "lucide-react": "^1.8.0",
@@ -34,6 +39,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "supabase": "^2.93.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^4.83.0"

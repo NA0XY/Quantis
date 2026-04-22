@@ -4,6 +4,7 @@ import React, { useRef } from 'react';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { QuantisLogo } from '@/components/brand/QuantisLogo';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
@@ -60,9 +61,8 @@ export function FloatingNav() {
       {/* Main Nav Bar */}
       <nav className="nav-bar bg-chalk border-b-4 border-ink px-6 py-4 shadow-[0_4px_0_#000] flex items-center justify-between">
         <div className="flex items-center space-x-6">
-          <Link href="/" className="nav-item flex items-center space-x-2 group">
-            <div className="w-8 h-8 bg-primary border-4 border-ink shadow-[4px_4px_0_#111] group-hover:rotate-12 transition-transform duration-200" />
-            <span className="font-ex-black text-ink tracking-tighter text-2xl uppercase">Quantis</span>
+          <Link href="/" className="nav-item group" aria-label="Quantis home">
+            <QuantisLogo size="md" showVersion version="v0.42" />
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -73,10 +73,10 @@ export function FloatingNav() {
         </div>
 
         <div className="flex items-center space-x-4">
-          <Link href="/dashboard" className="nav-item text-sm font-black uppercase tracking-tighter hover:underline decoration-4 decoration-primary underline-offset-4 hidden sm:block">
+          <Link href="/login" className="nav-item text-sm font-black uppercase tracking-tighter hover:underline decoration-4 decoration-primary underline-offset-4 hidden sm:block">
             Login
           </Link>
-          <Link href="/dashboard" className="nav-item">
+          <Link href="/signup" className="nav-item">
             <Button variant="primary" size="lg" className="uppercase font-black text-sm px-8 border-4">Get Started</Button>
           </Link>
         </div>

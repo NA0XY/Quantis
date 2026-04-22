@@ -11,7 +11,7 @@ export default function AppLayout({
   return (
     <div className="min-h-screen bg-sky">
       <AppSidebar />
-      <div className="pl-64 min-h-screen">
+      <div className="pl-64 min-h-screen animate-[fadeIn_0.2s_ease-in]">
         {children}
       </div>
     </div>

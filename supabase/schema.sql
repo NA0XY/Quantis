@@ -27,7 +27,8 @@ USING (true);
 -- Alternatively: CREATE POLICY "View assets only if owner" ON users FOR SELECT USING (auth.uid() = id);
 -- But that hides the WHOLE row. So public SELECT using (true) is kept, but we handle column privacy in the API/service layer.
 
-CREATE POLICY "Users can update their own row" ON users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert their own row" ON users FOR INSERT WITH CHECK ((SELECT auth.uid()) = id);
+CREATE POLICY "Users can update their own row" ON users FOR UPDATE USING ((SELECT auth.uid()) = id) WITH CHECK ((SELECT auth.uid()) = id);
 
 -- Table: algorithms
 CREATE TABLE algorithms (
@@ -44,12 +45,13 @@ CREATE INDEX idx_algorithms_is_active ON algorithms(is_active);
 
 ALTER TABLE algorithms ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public algorithms are viewable by everyone" ON algorithms FOR SELECT USING (true);
-CREATE POLICY "Users manage own algorithms" ON algorithms FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users manage own algorithms" ON algorithms FOR ALL USING ((SELECT auth.uid()) = user_id) WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- Table: trade_history
 CREATE TABLE trade_history (
   id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  algorithm_id UUID REFERENCES algorithms(id) ON DELETE SET NULL,
   symbol    TEXT NOT NULL,
   action    TEXT NOT NULL CHECK (action IN ('BUY','SELL')),
   price     NUMERIC(20, 8) NOT NULL,
@@ -57,10 +59,12 @@ CREATE TABLE trade_history (
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_trade_history_user_id ON trade_history(user_id);
+CREATE INDEX idx_trade_history_algorithm_id ON trade_history(algorithm_id);
 CREATE INDEX idx_trade_history_timestamp ON trade_history(timestamp);
 
 ALTER TABLE trade_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users read own trades" ON trade_history FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users read own trades" ON trade_history FOR SELECT USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users insert own trades" ON trade_history FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- [NEW] Table: portfolio_snapshots (Hourly tracking)
 CREATE TABLE portfolio_snapshots (
@@ -73,16 +77,22 @@ CREATE INDEX idx_snapshots_user_timestamp ON portfolio_snapshots(user_id, timest
 
 ALTER TABLE portfolio_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Snapshots viewable by everyone" ON portfolio_snapshots FOR SELECT USING (true);
+CREATE POLICY "Users insert own snapshots" ON portfolio_snapshots FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- [NEW] Function: Automatic User Onboarding
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.users (id, username, starting_balance, portfolio_usd)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'username', 'trader_' || substr(NEW.id::text, 1, 8)), 10000.00, 10000.00);
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)), 10000.00, 10000.00)
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Trigger for auth.users
 -- Note: This requires running as a superuser or via the Supabase UI SQL editor

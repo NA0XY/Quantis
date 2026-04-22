@@ -1,7 +1,19 @@
 from js import Response, Headers, JSON, fetch, Object
 import json
 
-def on_data_wrapper(strategy_code, candles):
+def to_iso_timestamp(value):
+    try:
+        timestamp = float(value)
+        if timestamp > 100000000000:
+            timestamp = timestamp / 1000
+
+        from datetime import datetime, timezone
+        return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+    except Exception:
+        return None
+
+
+def on_data_wrapper(strategy_code, candles, symbol="BTCUSDT"):
     """
     Executes the user's strategy code against a list of candles.
     The user is expected to define a function `on_candle(candle, portfolio)`
@@ -51,10 +63,15 @@ def on_data_wrapper(strategy_code, candles):
                     portfolio["cash"] -= (qty * c_close)
                     portfolio["trades"].append({
                         "time": candle[0],
+                        "timestamp": to_iso_timestamp(candle[0]),
+                        "symbol": symbol,
                         "action": "BUY",
                         "price": c_close,
+                        "amount": qty,
                         "qty": qty
                     })
+                    portfolio_api["cash"] = portfolio["cash"]
+                    portfolio_api["position"] = portfolio["position"]
 
             def sell(amount=1.0):
                 if portfolio["position"] > 0:
@@ -63,10 +80,15 @@ def on_data_wrapper(strategy_code, candles):
                     portfolio["position"] -= qty
                     portfolio["trades"].append({
                         "time": candle[0],
+                        "timestamp": to_iso_timestamp(candle[0]),
+                        "symbol": symbol,
                         "action": "SELL",
                         "price": c_close,
+                        "amount": qty,
                         "qty": qty
                     })
+                    portfolio_api["cash"] = portfolio["cash"]
+                    portfolio_api["position"] = portfolio["position"]
 
             # Decorate portfolio with actions
             portfolio_api = {
@@ -88,6 +110,7 @@ def on_data_wrapper(strategy_code, candles):
 
         # Calculate metrics
         equity = portfolio["equity_curve"]
+        final_value = equity[-1]
         max_dd = 0
         peak = equity[0]
         for val in equity:
@@ -103,13 +126,17 @@ def on_data_wrapper(strategy_code, candles):
             "success": True,
             "trades": portfolio["trades"],
             "equity": portfolio["equity_curve"],
-            "logs": logs,
-            "final_value": portfolio["equity_curve"][-1],
+            "logs": logs if portfolio["trades"] else logs + ["NO SIGNAL: Strategy completed without triggering any trades."],
+            "final_value": final_value,
             "metrics": {
+                "final_balance": final_value,
+                "final_assets": {
+                    symbol: portfolio["position"]
+                },
                 "max_drawdown": max_dd,
                 "win_rate": win_rate,
                 "total_trades": len(portfolio["trades"]),
-                "net_profit": portfolio["equity_curve"][-1] - 10000.0
+                "net_profit": final_value - 10000.0
             }
         }
 
@@ -145,17 +172,18 @@ async def on_fetch(request):
         
         strategy_code = body.get("code", "")
         data = body.get("data", [])
+        symbol = body.get("symbol", "BTCUSDT")
         
         if not data:
             data_js = await fetch_klines(
-                body.get("symbol", "BTCUSDT"),
+                symbol,
                 body.get("interval", "1m"),
                 body.get("limit", 1000)
             )
             data = json.loads(JSON.stringify(data_js))
         
         # Execute Strategy
-        result = on_data_wrapper(strategy_code, data)
+        result = on_data_wrapper(strategy_code, data, symbol)
         
         # Return response with CORS
         return Response.new(

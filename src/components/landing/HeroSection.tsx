@@ -88,7 +88,7 @@ export function HeroSection() {
         </p>
         
         <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
-          <Link href="/dashboard" className="hero-cta">
+          <Link href="/signup" className="hero-cta">
             <Button variant="primary" size="lg" className="shadow-[8px_8px_0_#000] active:translate-x-1 active:translate-y-1 active:shadow-[4px_4px_0_#000] text-xl uppercase font-black py-8 px-12 border-4 group">
               Start Building <span className="inline-block ml-2 group-hover:translate-x-2 transition-transform">→</span>
             </Button>

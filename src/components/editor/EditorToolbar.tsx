@@ -10,6 +10,7 @@ interface EditorToolbarProps {
   onToggleLive?: () => void;
   isExecuting?: boolean;
   isActive?: boolean;
+  marketScanCount?: number;
   strategyName: string;
   onNameChange: (name: string) => void;
 }
@@ -20,6 +21,7 @@ export function EditorToolbar({
   onToggleLive,
   isExecuting, 
   isActive,
+  marketScanCount,
   strategyName, 
   onNameChange 
 }: EditorToolbarProps) {
@@ -47,7 +49,9 @@ export function EditorToolbar({
               {isActive ? 'Bot Live' : 'Draft Mode'}
             </span>
           </div>
-          <span className="font-mono text-sm font-black text-ink/70 uppercase">v1.2.0</span>
+          <span className="font-mono text-sm font-black text-ink/70 uppercase">
+            v1.3.0 {marketScanCount ? `| ${marketScanCount} markets` : ''}
+          </span>
         </div>
       </div>
 
@@ -63,7 +67,7 @@ export function EditorToolbar({
             ) : (
               <Play className="w-4 h-4 fill-ink" />
             )}
-            <span>{isExecuting ? 'Executing...' : 'Run Test'}</span>
+            <span>{isExecuting ? 'Scanning...' : 'Scan Markets'}</span>
           </button>
           <button 
             onClick={onToggleLive}

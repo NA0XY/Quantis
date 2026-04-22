@@ -1,15 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { createChart, ColorType, CandlestickSeries, IChartApi, ISeriesApi, SeriesMarker, Time } from 'lightweight-charts';
+import {
+  createChart,
+  createSeriesMarkers,
+  ColorType,
+  CandlestickSeries,
+  IChartApi,
+  ISeriesApi,
+  ISeriesMarkersPluginApi,
+  SeriesMarker,
+  Time
+} from 'lightweight-charts';
+import { MARKET_SYMBOLS } from '@/lib/trading/markets';
 
 
-
-const SYMBOLS = [
-  "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "MATICUSDT", 
-  "DOTUSDT", "TRXUSDT", "LTCUSDT", "SHIBUSDT", "AVAXUSDT", "LINKUSDT", "ATOMUSDT", "UNIUSDT", 
-  "BCHUSDT", "XLMUSDT", "NEARUSDT", "FILUSDT", "ICPUSDT", "APTUSDT", "LDOUSDT", "HBARUSDT", 
-  "ETCUSDT", "KASUSDT", "ARBUSDT", "OPUSDT", "MKRUSDT", "AAVEUSDT", "RNDRUSDT", "INJUSDT", 
-  "STXUSDT", "SUIUSDT", "SEIUSDT", "TIAUSDT", "FETUSDT", "AGIXUSDT", "WLDUSDT", "ORDIUSDT", "PEPEUSDT"
-];
 
 interface Candle {
   time: Time;
@@ -30,6 +33,9 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick", Time> | null>(null);
+  const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
+  const latestMarkersRef = useRef(markers);
+  const onDataLoadedRef = useRef(onDataLoaded);
 
 
   const [symbol, setSymbol] = useState(selectedSymbol || "BTCUSDT");
@@ -40,31 +46,22 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
     if (selectedSymbol) setSymbol(selectedSymbol);
   }, [selectedSymbol]);
 
+  useEffect(() => {
+    onDataLoadedRef.current = onDataLoaded;
+  }, [onDataLoaded]);
+
   // Handle Markers Update
   useEffect(() => {
-    if (candleSeriesRef.current) {
-      const series = candleSeriesRef.current as unknown as { setMarkers: (m: SeriesMarker<Time>[]) => void };
-      series.setMarkers(markers);
+    latestMarkersRef.current = markers;
+    if (markersRef.current) {
+      markersRef.current.setMarkers(markers);
     }
-  }, [markers, candleSeriesRef]);
-
-
-
-
-  // Chart Cleanup
-  useEffect(() => {
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-        candleSeriesRef.current = null;
-      }
-    };
-  }, []);
+  }, [markers]);
 
   // Main Chart Logic
   useEffect(() => {
     if (!chartContainerRef.current) return;
+    let disposed = false;
 
     // Initialize Chart
     const chart = createChart(chartContainerRef.current, {
@@ -94,15 +91,8 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
       wickUpColor: '#FF90E8',
     });
 
-    if (markers.length > 0) {
-      const series = candleSeries as unknown as { setMarkers: (m: SeriesMarker<Time>[]) => void };
-      series.setMarkers(markers);
-    }
-    
     candleSeriesRef.current = candleSeries as unknown as ISeriesApi<"Candlestick", Time>;
-
-
-
+    markersRef.current = createSeriesMarkers(candleSeries, latestMarkersRef.current);
 
     chartRef.current = chart;
 
@@ -120,12 +110,14 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
           close: parseFloat(d[4]),
         }));
 
+        if (disposed) return;
+
         candleSeries.setData(formattedData);
         chart.timeScale().fitContent();
 
         // Feed data back to parent for backtesting
-        if (onDataLoaded) {
-          onDataLoaded(result);
+        if (onDataLoadedRef.current) {
+          onDataLoadedRef.current(result);
         }
 
         // Set live price info
@@ -139,16 +131,20 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
         });
 
       } catch (error) {
-        console.error("Failed to fetch Binance data:", error);
+        if (!disposed) {
+          console.error("Failed to fetch Binance data:", error);
+        }
       } finally {
-        setIsLoading(false);
+        if (!disposed) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
 
     const handleResize = () => {
-      if (chartContainerRef.current) {
+      if (!disposed && chartContainerRef.current) {
         chart.applyOptions({ width: chartContainerRef.current.clientWidth });
       }
     };
@@ -156,12 +152,15 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
     window.addEventListener('resize', handleResize);
 
     return () => {
+      disposed = true;
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      markersRef.current?.detach();
+      markersRef.current = null;
       chartRef.current = null;
       candleSeriesRef.current = null;
+      chart.remove();
     };
-  }, [symbol, markers, onDataLoaded]);
+  }, [symbol]);
 
 
   return (
@@ -183,7 +182,7 @@ export function ChartPane({ markers = [], onDataLoaded, selectedSymbol }: ChartP
           onChange={(e) => setSymbol(e.target.value)}
           className="bg-primary text-ink border-4 border-ink shadow-[4px_4px_0_#111] px-4 py-2 font-black uppercase text-sm outline-none cursor-pointer hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all max-h-[200px]"
         >
-          {SYMBOLS.map(s => (
+          {MARKET_SYMBOLS.map(s => (
             <option key={s} value={s}>{s.replace('USDT', ' / USDT')}</option>
           ))}
         </select>

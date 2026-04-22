@@ -20,11 +20,13 @@ export const discoverService = {
 
     if (userError) throw userError;
 
-    // 2. Fetch all active algorithms
+    // 2. Fetch recent algorithms. Active strategies are sorted first so Discover never looks broken
+    // for new projects that only have drafts.
     const { data: algos, error: algoError } = await supabase
       .from('algorithms')
-      .select('id, name, user_id, is_active')
-      .eq('is_active', true)
+      .select('id, name, user_id, is_active, created_at')
+      .order('is_active', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(20);
 
     if (algoError) throw algoError;
@@ -45,7 +47,7 @@ export const discoverService = {
         is_active: a.is_active,
         user_id: a.user_id
       };
-    }).sort((a, b) => b.roi_all_time - a.roi_all_time);
+    }).sort((a, b) => Number(b.is_active) - Number(a.is_active) || b.roi_all_time - a.roi_all_time);
   },
 
   async getMarketStats() {

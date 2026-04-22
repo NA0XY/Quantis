@@ -147,6 +147,16 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000)
 
+### 4 - Supabase migrations
+
+The Supabase CLI is included in this repo. Use it to apply database changes, including the auth user onboarding trigger, without pasting SQL manually in the Supabase dashboard.
+
+```bash
+npm run supabase:login
+npm run supabase:link
+npm run db:push
+```
+
 ---
 
 ## Scripts
@@ -155,6 +165,9 @@ Visit [http://localhost:3000](http://localhost:3000)
 npm run dev          # Start local dev server
 npm run build        # Production build
 npm run start        # Start production server
+npm run supabase:login # Authenticate Supabase CLI
+npm run supabase:link  # Link this repo to a Supabase project
+npm run db:push      # Apply Supabase migrations to the linked project
 npm run preview      # Build + preview on Cloudflare locally
 npm run deploy       # Build + deploy to Cloudflare Workers
 npm run lint         # ESLint

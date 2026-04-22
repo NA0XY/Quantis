@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "quantis-bot-cron",
+  "main": "src/cron/index.ts",
+  "compatibility_date": "2026-04-22",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "vars": {
+    "SUPABASE_URL": "https://wzmlrxobdxvhfcbbbmcc.supabase.co",
+    "SIM_WORKER_URL": "https://quantis-sim-engine.successstairway52.workers.dev"
+  },
+  "services": [
+    {
+      "binding": "SIM_ENGINE",
+      "service": "quantis-sim-engine"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}
