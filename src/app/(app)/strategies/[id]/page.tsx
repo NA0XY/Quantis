@@ -205,7 +205,7 @@ export default function StrategyDetailPage() {
                   <BarChart3 size={18} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Growth ROI</span>
                 </div>
-                <div className="text-[clamp(2.6rem,5vw,3.25rem)] leading-none font-black text-ink tabular-nums tracking-tighter break-words">{stats.roi >= 0 ? '+' : ''}{stats.roi}%</div>
+                <div className="text-[clamp(2.1rem,4.4vw,3.25rem)] leading-none font-black text-ink tabular-nums tracking-[-0.08em] whitespace-nowrap">{stats.roi >= 0 ? '+' : ''}{stats.roi}%</div>
               </div>
 
               <div className="bg-chalk border-8 border-ink p-7 shadow-[10px_10px_0_#111] min-w-0 overflow-hidden">
@@ -213,7 +213,7 @@ export default function StrategyDetailPage() {
                   <Activity size={18} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Sell Ratio</span>
                 </div>
-                <div className="text-[clamp(2.6rem,5vw,3.25rem)] leading-none font-black text-ink tabular-nums tracking-tighter break-words">{stats.success_rate}%</div>
+                <div className="text-[clamp(2.1rem,4.4vw,3.25rem)] leading-none font-black text-ink tabular-nums tracking-[-0.08em] whitespace-nowrap">{stats.success_rate}%</div>
               </div>
 
               <div className="bg-ink border-8 border-ink p-7 shadow-[10px_10px_0_#111] min-w-0 overflow-hidden">
@@ -221,7 +221,7 @@ export default function StrategyDetailPage() {
                   <DollarSign size={18} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Total PNL</span>
                 </div>
-                <div className="text-[clamp(2.35rem,4.5vw,3.25rem)] leading-none font-black text-primary tabular-nums tracking-tighter break-words">{formatUsd(stats.total_pnl)}</div>
+                <div className="text-[clamp(1.85rem,3.9vw,3.25rem)] leading-none font-black text-primary tabular-nums tracking-[-0.08em] whitespace-nowrap">{formatUsd(stats.total_pnl)}</div>
               </div>
             </section>
 
