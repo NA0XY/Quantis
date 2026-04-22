@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#D6EAFF"/>
+  <rect x="58" y="58" width="1084" height="514" fill="#FFFFFF" stroke="#111111" stroke-width="10"/>
+  <rect x="86" y="86" width="250" height="38" fill="#FF90E8" stroke="#111111" stroke-width="4"/>
+  <text x="108" y="111" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="4">CRYPTO ALGO SIMULATOR</text>
+  <text x="86" y="278" fill="#111111" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="132" font-weight="900" letter-spacing="-8">QUANTIS</text>
+  <rect x="86" y="304" width="536" height="24" fill="#FF90E8" stroke="#111111" stroke-width="4"/>
+  <text x="86" y="400" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900">Build, backtest, and run crypto trading strategies.</text>
+  <text x="86" y="456" fill="#4b5563" font-family="Courier New, monospace" font-size="24" font-weight="700">Real-time markets. Live bots. Paper trading edge.</text>
+  <rect x="814" y="154" width="214" height="322" fill="#111111"/>
+  <rect x="838" y="178" width="166" height="62" fill="#FF90E8" stroke="#FFFFFF" stroke-width="6"/>
+  <line x1="921" y1="116" x2="921" y2="534" stroke="#111111" stroke-width="12"/>
+  <rect x="782" y="502" width="284" height="36" fill="#FF90E8" stroke="#111111" stroke-width="6"/>
+</svg>

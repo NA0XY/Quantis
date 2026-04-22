@@ -1,7 +1,14 @@
 import React from 'react';
+import type { Metadata } from 'next';
 
 import { AppSidebar } from '@/components/app/AppSidebar';
 
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AppLayout({
   children,
