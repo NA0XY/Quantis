@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   formatScannerMoney,
+  resolveSimulationWorkerUrl,
   runBacktestForSymbol,
   scanMarkets,
+  toUserSafeSimulationError,
   type WorkerSimulationResult,
 } from "@/lib/trading/marketScanner";
 
@@ -34,8 +36,11 @@ function simulationResult(
 }
 
 describe("marketScanner", () => {
+  const originalWorkerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
+
   afterEach(() => {
     vi.restoreAllMocks();
+    process.env.NEXT_PUBLIC_WORKER_URL = originalWorkerUrl;
   });
 
   it("formats scanner money as USD with two decimal places", () => {
@@ -45,6 +50,32 @@ describe("marketScanner", () => {
 
   it("preserves NaN formatting behavior for invalid numeric inputs", () => {
     expect(formatScannerMoney(Number.NaN)).toBe("$NaN");
+  });
+
+  it("prefers an explicitly provided worker URL", () => {
+    process.env.NEXT_PUBLIC_WORKER_URL = "https://env-worker.test";
+
+    expect(resolveSimulationWorkerUrl("https://explicit-worker.test")).toBe("https://explicit-worker.test");
+  });
+
+  it("falls back to NEXT_PUBLIC_WORKER_URL and then the deployed worker URL", () => {
+    process.env.NEXT_PUBLIC_WORKER_URL = "https://env-worker.test";
+    expect(resolveSimulationWorkerUrl()).toBe("https://env-worker.test");
+
+    delete process.env.NEXT_PUBLIC_WORKER_URL;
+    expect(resolveSimulationWorkerUrl()).toBe("https://quantis-sim-engine.quantis.workers.dev");
+  });
+
+  it("sanitizes infrastructure errors for UI display while preserving strategy errors", () => {
+    expect(toUserSafeSimulationError("NEXT_PUBLIC_WORKER_URL is not set. Run wrangler dev.")).toBe(
+      "Simulation engine is temporarily unavailable. Please try again in a moment."
+    );
+    expect(toUserSafeSimulationError("BTCUSDT: Simulation worker returned HTTP 500")).toBe(
+      "Simulation engine is temporarily unavailable. Please try again in a moment."
+    );
+    expect(toUserSafeSimulationError("BTCUSDT: name 'price' is not defined")).toBe(
+      "BTCUSDT: name 'price' is not defined"
+    );
   });
 
   it("posts a symbol backtest request and normalizes missing arrays", async () => {

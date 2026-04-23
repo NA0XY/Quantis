@@ -7,7 +7,12 @@ import { ChartPane } from '@/components/editor/ChartPane';
 import { Terminal, TerminalLog } from '@/components/editor/Terminal';
 import { strategyService } from '@/lib/services/strategy';
 import { MARKET_SYMBOLS } from '@/lib/trading/markets';
-import { formatScannerMoney, scanMarkets } from '@/lib/trading/marketScanner';
+import {
+  formatScannerMoney,
+  resolveSimulationWorkerUrl,
+  scanMarkets,
+  toUserSafeSimulationError
+} from '@/lib/trading/marketScanner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Time, SeriesMarker } from 'lightweight-charts';
 
@@ -257,16 +262,7 @@ function EditorContent() {
         ])
       ]);
       
-      const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
-      if (!workerUrl) {
-        setBacktestResults({
-          success: false,
-          error: 'NEXT_PUBLIC_WORKER_URL is not set. Run `wrangler dev --config wrangler.worker.toml` and add it to .env.local'
-        });
-        setLogs(prev => [...prev, createLog('ERROR: NEXT_PUBLIC_WORKER_URL is not configured.')]);
-        setIsExecuting(false);
-        return;
-      }
+      const workerUrl = resolveSimulationWorkerUrl();
 
       const { best: result, ranked, failures } = await scanMarkets({
         code,
@@ -326,10 +322,10 @@ function EditorContent() {
 
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = toUserSafeSimulationError(error);
       setBacktestResults({
         success: false,
-        error: "Failed to connect to simulation worker. Is wrangler running?"
+        error: message
       });
       setLogs(prev => [...prev, createLog(`ERROR: ${message}`)]);
     }

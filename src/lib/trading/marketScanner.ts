@@ -1,5 +1,17 @@
 import { MARKET_SYMBOLS, type MarketSymbol } from '@/lib/trading/markets';
 
+const DEPLOYED_SIM_WORKER_URL = 'https://quantis-sim-engine.quantis.workers.dev';
+const USER_SAFE_SIMULATION_ERROR = 'Simulation engine is temporarily unavailable. Please try again in a moment.';
+const sensitiveSimulationErrorPatterns = [
+  /NEXT_PUBLIC_WORKER_URL/i,
+  /SIM_WORKER_URL/i,
+  /wrangler/i,
+  /workers\.dev/i,
+  /simulation worker returned HTTP/i,
+  /failed to fetch/i,
+  /network/i,
+];
+
 export interface SimulationMetrics {
   final_balance: number;
   final_assets: Record<string, number>;
@@ -40,6 +52,19 @@ export function formatScannerMoney(value: number) {
     currency: 'USD',
     maximumFractionDigits: 2
   });
+}
+
+export function resolveSimulationWorkerUrl(workerUrl?: string) {
+  return workerUrl?.trim()
+    || process.env.NEXT_PUBLIC_WORKER_URL?.trim()
+    || DEPLOYED_SIM_WORKER_URL;
+}
+
+export function toUserSafeSimulationError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return sensitiveSimulationErrorPatterns.some((pattern) => pattern.test(message))
+    ? USER_SAFE_SIMULATION_ERROR
+    : message;
 }
 
 export async function runBacktestForSymbol(
