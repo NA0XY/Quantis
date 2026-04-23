@@ -1,2 +1,0 @@
-RestrictedPython>=7.1
-
