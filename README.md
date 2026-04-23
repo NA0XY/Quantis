@@ -351,6 +351,25 @@ docker run -p 3000:3000 --env-file .env.local quantis
 
 ---
 
+## Testing
+
+Quantis uses [Vitest](https://vitest.dev) for unit tests, with `jsdom` and Testing Library available for component-level coverage.
+
+```bash
+npm test            # run the unit test suite once
+npm run test:watch  # watch mode while developing
+npm run test:ui     # open the Vitest UI
+```
+
+Current coverage targets the core trading and backend logic:
+
+- `src/lib/trading/marketScanner.ts` — worker request handling, error paths, market ranking, and scan batching.
+- `src/lib/trading/markets.ts` — supported market universe integrity and symbol transformations.
+- `src/lib/services/strategy.ts` — strategy persistence, Supabase query construction, trade logging, and stat calculations with mocked clients.
+- `src/app/api/ai/coach/route.ts` — Groq request construction, mode formatting, auth/error handling, history limits, and SSE response headers.
+
+---
+
 ## Environment Variables
 
 ### Next.js App (`.env.local`)

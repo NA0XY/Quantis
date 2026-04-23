@@ -11,7 +11,9 @@
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",
-    "test": "node scripts/no-tests.mjs",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "supabase:login": "supabase login",
@@ -35,14 +37,19 @@
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.8.0",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^15.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^1.6.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "jsdom": "^24.0.0",
     "supabase": "^2.93.0",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "^1.6.0",
     "wrangler": "^4.83.0"
   }
 }
