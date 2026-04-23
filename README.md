@@ -17,6 +17,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
 [![Python](https://img.shields.io/badge/Python_3-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+![CI](https://github.com/NA0XY/Quantis/actions/workflows/ci.yml/badge.svg)
 
 <br/>
 
@@ -45,11 +46,13 @@ Every account starts with a simulated **$10,000 USD** portfolio. Performance is 
 - [Project Structure](#project-structure)
 - [Database Schema](#database-schema)
 - [Getting Started](#getting-started)
+- [Docker](#docker)
 - [Environment Variables](#environment-variables)
 - [Scripts](#scripts)
 - [How Strategies Work](#how-strategies-work)
 - [Market Scanner](#market-scanner)
 - [Cron Bot Engine](#cron-bot-engine)
+- [CI/CD](#cicd)
 - [Deployment](#deployment)
 - [Routes Reference](#routes-reference)
 
@@ -590,6 +593,17 @@ curl https://your-cron-worker.workers.dev/health
   }
 }
 ```
+
+---
+
+## CI/CD
+
+Quantis uses GitHub Actions for automated checks and Cloudflare deployment.
+
+- CI runs on every push and on pull requests to `main`: lint, typecheck, test, Python worker lint, and production build.
+- Deploy runs automatically on pushes to `main` after repeating lint, typecheck, test, build, and OpenNext bundle generation.
+- Required GitHub repository secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`.
+- Cloudflare runtime secrets such as `GROQ_API_KEY` should still be configured on the Worker with `wrangler secret put`.
 
 ---
 
