@@ -1,0 +1,11 @@
+node_modules
+.next
+.open-next
+.wrangler
+.env.local
+.env
+*.log
+.git
+.gitignore
+README.md
+tsconfig.tsbuildinfo

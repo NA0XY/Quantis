@@ -326,6 +326,28 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
+## Docker
+
+Run the full stack locally with Docker Compose:
+
+```bash
+cp .env.local.example .env.local
+# fill in your Supabase and Groq credentials in .env.local
+
+docker compose up --build
+```
+
+The app will be available at http://localhost:3000.
+
+To run only the Next.js frontend:
+
+```bash
+docker build -t quantis .
+docker run -p 3000:3000 --env-file .env.local quantis
+```
+
+---
+
 ## Environment Variables
 
 ### Next.js App (`.env.local`)
@@ -334,11 +356,17 @@ Open [http://localhost:3000](http://localhost:3000).
 |:---|:---:|:---|
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon/public key |
+| `SUPABASE_URL` | ✅ | Supabase project URL for worker-style local services |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase service role key for trusted backend/worker operations |
+| `GROQ_API_KEY` | ✅ | Groq API key for the AI Strategy Coach |
 | `NEXT_PUBLIC_WORKER_URL` | ✅ | URL of the deployed Python simulation worker |
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+GROQ_API_KEY=your_groq_api_key_here
 NEXT_PUBLIC_WORKER_URL=https://quantis-sim-engine.your-subdomain.workers.dev
 ```
 
