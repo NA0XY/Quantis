@@ -15,7 +15,7 @@ export function PortfolioSnapshot({ snapshot, prices, activeBots }: PortfolioSna
     return acc + (qty * price);
   }, 0);
 
-  const totalValue = snapshot.portfolio_usd + assetsValue;
+  const totalValue = snapshot.portfolio_usd;
   const FIXED_BASE = 10000;
   const totalReturn = ((totalValue - FIXED_BASE) / FIXED_BASE) * 100;
 
@@ -25,14 +25,14 @@ export function PortfolioSnapshot({ snapshot, prices, activeBots }: PortfolioSna
         <div className="font-mono text-4xl font-black text-ink mb-2">
           ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
-        <div className="text-sm uppercase tracking-widest text-ink font-bold border-t-4 border-ink pt-2">Total Value</div>
+        <div className="text-sm uppercase tracking-widest text-ink font-bold border-t-4 border-ink pt-2">Portfolio Equity</div>
       </Card>
       
       <Card className="border-4 bg-[#b2f2bb] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[10px_10px_0_#111] transition-all">
         <div className="font-mono text-4xl font-black text-ink mb-2">
-          ${snapshot.portfolio_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${assetsValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
-        <div className="text-sm uppercase tracking-widest text-ink font-bold border-t-4 border-ink pt-2">Cash Balance</div>
+        <div className="text-sm uppercase tracking-widest text-ink font-bold border-t-4 border-ink pt-2">Open Asset Value</div>
       </Card>
       
       <Card className="border-4 bg-[#ffd8a8] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[10px_10px_0_#111] transition-all">

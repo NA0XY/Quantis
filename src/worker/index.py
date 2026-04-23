@@ -122,17 +122,20 @@ def on_data_wrapper(strategy_code, candles, symbol="BTCUSDT"):
         wins = [t for t in portfolio["trades"] if t.get("profit", 0) > 0]
         win_rate = len(wins) / len(portfolio["trades"]) if portfolio["trades"] else 0
 
+        final_assets = {}
+        if abs(portfolio["position"]) > 1e-10:
+            final_assets[symbol] = portfolio["position"]
+
         return {
             "success": True,
+            "symbol": symbol,
             "trades": portfolio["trades"],
             "equity": portfolio["equity_curve"],
             "logs": logs if portfolio["trades"] else logs + ["NO SIGNAL: Strategy completed without triggering any trades."],
             "final_value": final_value,
             "metrics": {
                 "final_balance": final_value,
-                "final_assets": {
-                    symbol: portfolio["position"]
-                },
+                "final_assets": final_assets,
                 "max_drawdown": max_dd,
                 "win_rate": win_rate,
                 "total_trades": len(portfolio["trades"]),

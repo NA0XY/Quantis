@@ -63,7 +63,7 @@ export const dashboardService = {
     try {
       // Binance Ticker Price API
       // Format: https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT"]
-      const encodedSymbols = JSON.stringify(symbols);
+      const encodedSymbols = encodeURIComponent(JSON.stringify(symbols));
       const url = `https://api.binance.com/api/v3/ticker/price?symbols=${encodedSymbols}`;
       
       const response = await fetch(url);

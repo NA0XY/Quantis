@@ -31,10 +31,12 @@ export default function DashboardPage() {
         setSnapshot(newSnapshot);
         // Fetch prices for held assets
         const assets = newSnapshot.portfolio_assets as Record<string, number>;
-        const symbols = Object.keys(assets).filter(s => assets[s] > 0);
+        const symbols = Object.keys(assets).filter(s => Number(assets[s]) > 1e-10);
         if (symbols.length > 0) {
           const newPrices = await dashboardService.getMarketPrices(symbols);
           setPrices(newPrices);
+        } else {
+          setPrices({});
         }
       }
       
@@ -50,7 +52,7 @@ export default function DashboardPage() {
   const refreshPrices = React.useCallback(async () => {
     if (snapshot) {
       const assets = snapshot.portfolio_assets as Record<string, number>;
-      const symbols = Object.keys(assets).filter(s => assets[s] > 0);
+      const symbols = Object.keys(assets).filter(s => Number(assets[s]) > 1e-10);
       if (symbols.length > 0) {
         const newPrices = await dashboardService.getMarketPrices(symbols);
         setPrices(prev => ({ ...prev, ...newPrices }));
@@ -64,19 +66,27 @@ export default function DashboardPage() {
     // 30s Price Refresh
     const priceInterval = setInterval(refreshPrices, 30000);
 
-    // Supabase Realtime Subscription
     const supabase = createClient();
-    const tradeSubscription = supabase
-      .channel('trade-updates')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trade_history' }, () => {
-        console.log("Realtime: New trade detected, refreshing dashboard...");
-        fetchData();
-      })
-      .subscribe();
+    let dashboardChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    const subscribeToDashboardUpdates = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      dashboardChannel = supabase
+        .channel(`dashboard-updates-${user.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trade_history', filter: `user_id=eq.${user.id}` }, fetchData)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` }, fetchData)
+        .subscribe();
+    };
+
+    subscribeToDashboardUpdates();
 
     return () => {
       clearInterval(priceInterval);
-      supabase.removeChannel(tradeSubscription);
+      if (dashboardChannel) {
+        supabase.removeChannel(dashboardChannel);
+      }
     };
   }, [fetchData, refreshPrices]);
 
@@ -118,7 +128,12 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
           <div className="xl:col-span-2">
             <h2 className="font-black text-ink mb-6 text-3xl uppercase tracking-tighter italic">Portfolio Holdings</h2>
-            <AssetsTable assets={snapshot.portfolio_assets} prices={prices} />
+            <AssetsTable
+              assets={snapshot.portfolio_assets}
+              prices={prices}
+              portfolioUsd={snapshot.portfolio_usd}
+              hasTrades={trades.length > 0}
+            />
             <TradeHistoryFeed trades={trades} />
           </div>
           
