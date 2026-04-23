@@ -1,323 +1,222 @@
-<div align="center">
-
-<img src="src/app/icon.svg" width="72" height="72" alt="Quantis Logo" />
-
 # QUANTIS
 
-**Crypto Algorithmic Trading Simulator**
+**Build, backtest & run crypto trading strategies — now with AI coaching**
 
-*Write Python. Scan 41 markets. Dominate the leaderboard.*
+![CI](https://github.com/NA0XY/Quantis/actions/workflows/ci.yml/badge.svg) [![Live Demo](https://img.shields.io/badge/Live%20Demo-app.quantis.workers.dev-2ea44f?style=flat-square)](https://app.quantis.workers.dev) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](#license) [![Made with](https://img.shields.io/badge/Made%20with-Next.js%20%7C%20TypeScript%20%7C%20Supabase%20%7C%20Groq-111111?style=flat-square)](#tech-stack)
 
-<br/>
+## Screenshot / Demo
 
-[![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
-[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
-[![Python](https://img.shields.io/badge/Python_3-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-![CI](https://github.com/NA0XY/Quantis/actions/workflows/ci.yml/badge.svg)
+> 🎬 **[Watch the demo video](YOUR_VIDEO_URL)**
 
-<br/>
-
-```
-  Write Strategy  ──▶  Scan 41 Markets  ──▶  Auto-Execute  ──▶  Leaderboard
-  [ Monaco IDE  ]      [ Binance Data  ]      [ Live Bot   ]      [ Rankings ]
-```
-
-</div>
-
----
+![Dashboard](./public/og-image.svg)
 
 ## Overview
 
-Quantis is a **browser-based crypto algorithmic trading simulator** built on Next.js and deployed to Cloudflare Workers. Users write Python trading strategies in a Monaco-powered IDE, backtest them against real Binance candlestick data across 41 markets simultaneously, and optionally deploy them as live bots that auto-execute every 5 minutes via a scheduled cron worker.
+Quantis is a full-stack crypto algorithmic trading simulator for building, testing, and operating Python strategies from the browser. It gives users a Monaco-powered strategy editor, Supabase-backed accounts and portfolios, a Python simulation worker, real Binance market data, and a Cloudflare cron engine that can keep active strategies running automatically.
 
-Every account starts with a simulated **$10,000 USD** portfolio. Performance is tracked, persisted to Supabase, and ranked on a global leaderboard with 24H / 7D / All-Time timeframes.
+The project solves a common problem for early algorithmic traders: ideas are easy to describe, but hard to validate safely. Quantis turns that workflow into a tight loop: write strategy logic, scan supported USDT markets, inspect logs and chart markers, persist simulated trades, and compare results on a leaderboard without touching real capital.
 
----
+Quantis now includes two AI workflows powered by Groq Llama 3.3 70B. The AI Strategy Coach supports chat, strategy analysis, and portfolio recommendations over streaming SSE. The AI Strategy Generator converts a plain-English trading idea into runnable Quantis-compatible Python code, validates it for the required `on_candle(candle, portfolio)` interface, blocks unsafe generated code, and opens it in the editor as a draft for human review.
 
-## Table of Contents
+## Features Table
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Database Schema](#database-schema)
-- [Getting Started](#getting-started)
-- [Docker](#docker)
-- [Environment Variables](#environment-variables)
-- [Scripts](#scripts)
-- [How Strategies Work](#how-strategies-work)
-- [Market Scanner](#market-scanner)
-- [Cron Bot Engine](#cron-bot-engine)
-- [CI/CD](#cicd)
-- [Deployment](#deployment)
-- [Routes Reference](#routes-reference)
-
----
-
-## Features
-
-### Strategy Editor
-- Full **Monaco Editor** (VS Code engine) with Python syntax highlighting
-- Inline strategy name editing with live status indicator
-- **Scan Markets** — backtests your strategy across all 41 supported pairs in parallel batches of 6
-- **Go Live** — deploys your strategy as an active bot, picked up by the cron engine every 5 minutes
-- Save and share strategies via URL
-
-### Market Scanner
-- Runs your strategy against **41 Binance USDT pairs** simultaneously
-- Batched execution (6 markets per batch) with real-time progress feedback
-- Automatically selects the **best-performing market** based on net profit and trade activity
-- Returns full equity curve, trade log, and performance metrics per symbol
-
-### Dashboard
-- Live portfolio snapshot: current USD value, assets held, P&L vs $10k baseline
-- Real-time asset prices pulled from Binance Ticker API
-- Active bot count
-- Trade history feed (last 20 trades)
-
-### Leaderboard
-- Global rankings sorted by ROI against fixed $10k base
-- Timeframe filters: **All Time**, **7 Days**, **24 Hours**
-- Shows active bot status per trader
-- Your rank banner with percentile position
-
-### Discover
-- Browse community strategies sorted by active status and ROI
-- View strategy stats: trade count, buy/sell ratio, success rate, P&L
-- Inspect any public strategy's trade history
-
-### Live Bot (Cron Engine)
-- Scheduled Cloudflare Worker runs every **5 minutes**
-- Picks up to 3 active algorithms per cycle
-- Scans all 41 markets, selects the best, persists new trades and updates portfolio
-- Manual trigger endpoint (`POST /run`) protected by `CRON_RUN_SECRET`
-- Health check endpoint (`GET /health`)
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Browser (Next.js App)                        │
-│                                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌───────────┐  ┌──────────────────┐  │
-│  │ Editor   │  │Dashboard │  │Leaderboard│  │    Discover      │  │
-│  │ Monaco   │  │Portfolio │  │  Rankings │  │  Community Strats│  │
-│  └────┬─────┘  └────┬─────┘  └─────┬─────┘  └────────┬─────────┘  │
-│       │              │              │                  │            │
-└───────┼──────────────┼──────────────┼──────────────────┼────────────┘
-        │              │              │                  │
-        ▼              ▼              └──────────────────┘
-┌───────────────┐  ┌──────────────────────────────────────┐
-│  Sim Worker   │  │              Supabase                 │
-│  (Python CF)  │  │  users · algorithms · trade_history  │
-│               │  │  portfolio_snapshots                  │
-│  on_candle()  │  └──────────────────────────────────────┘
-│  + Binance    │              ▲
-│  klines API   │              │
-└───────────────┘  ┌───────────┴──────────────────────────┐
-                   │         Cron Worker (CF)              │
-                   │  Runs every 5 min · scans 41 markets  │
-                   │  Persists trades · updates portfolio  │
-                   └──────────────────────────────────────┘
-```
-
-**Request flow for a manual backtest:**
-1. User clicks "Scan Markets" in the editor
-2. Frontend calls `marketScanner.scanMarkets()` — batches 41 symbols, 6 at a time
-3. Each batch POSTs `{ code, symbol, interval, limit }` to the Python Simulation Worker
-4. Worker fetches live Binance klines, runs `on_candle()` per candle, returns metrics + trades
-5. Best result is surfaced in the editor terminal and chart pane
-
-**Request flow for a live bot cycle:**
-1. Cloudflare Cron triggers `scheduled()` every 5 minutes
-2. Fetches up to 3 active algorithms from Supabase
-3. For each: scans all 41 markets via the Sim Worker, picks the best
-4. Persists new trades to `trade_history`, updates `users.portfolio_usd`
-
----
+| Feature | Description | Status |
+| --- | --- | --- |
+| Authentication | Supabase Auth with JWT sessions, email/password, magic links, and OAuth callback support. | Implemented |
+| Strategy Editor | Monaco Python editor with strategy naming, save, run, go-live controls, chart markers, and terminal logs. | Implemented |
+| Market Scanner | Scans supported Binance USDT markets and ranks the strongest backtest result using real candle data. | Implemented |
+| Backtesting | Python simulation worker executes `on_candle(candle, portfolio)` against Binance klines and returns trades, equity, logs, and metrics. | Implemented |
+| AI Coach | Groq-powered coach with chat, analyze, and recommend modes over streaming SSE. | Implemented |
+| AI Generator | Natural language trading idea to Quantis-compatible Python strategy, with safety checks and one-click editor handoff. | Implemented |
+| Leaderboard | ROI rankings, percentile banner, timeframe views, and public performance discovery. | Implemented |
+| Cloudflare Edge Deployment | Next.js deployed through OpenNext on Cloudflare Workers, plus scheduled cron and simulation workers. | Implemented |
 
 ## Tech Stack
 
-| Layer | Technology | Version | Purpose |
-|:---|:---|:---:|:---|
-| Framework | Next.js (App Router) | 16.2.4 | Full-stack React, SSR, routing |
-| UI Library | React | 19.2.4 | Component rendering |
-| Language | TypeScript | ^5 | Type safety across the codebase |
-| Styling | Tailwind CSS | ^4 | Utility-first CSS, neobrutalist design |
-| Animations | GSAP + ScrollTrigger | ^3.15 | Scroll-driven landing animations |
-| Code Editor | Monaco Editor | ^4.7 | VS Code engine in the browser |
-| Charts | Lightweight Charts | ^5.1 | Candlestick & equity curve charts |
-| Auth & DB | Supabase | ^2.103 | Auth, Postgres, Row Level Security |
-| Strategy Engine | Python + RestrictedPython | ≥7.1 | Sandboxed strategy execution |
-| Deployment | Cloudflare Workers + OpenNext | ^1.8 | Edge-deployed Next.js |
-| Wrangler | Cloudflare Wrangler | ^4.83 | CF Workers CLI & local dev |
+### Frontend
 
----
+- **Next.js 16 App Router**: authenticated app routes, public marketing routes, API route handlers, metadata, sitemap, and robots.
+- **React 19 + TypeScript**: strict typed components, stateful editor surfaces, and client-side AI interactions.
+- **Tailwind CSS 4**: neo-brutalist design tokens, heavy borders, hard shadows, and responsive layouts.
+- **Monaco Editor**: browser-based Python strategy editing with VS Code-style ergonomics.
+- **Lightweight Charts**: live candlestick charts and strategy trade markers.
 
-## Project Structure
+### Backend
 
-```
-quantis/
-├── src/
-│   ├── app/
-│   │   ├── (marketing)/            ← Public-facing pages
-│   │   │   ├── page.tsx            ← Landing page
-│   │   │   ├── login/              ← Sign in
-│   │   │   └── signup/             ← Create account
-│   │   │
-│   │   ├── (app)/                  ← Auth-protected app shell
-│   │   │   ├── layout.tsx          ← App layout with sidebar
-│   │   │   ├── dashboard/          ← Portfolio overview
-│   │   │   ├── editor/             ← Strategy IDE
-│   │   │   ├── markets/            ← Market browser
-│   │   │   ├── discover/           ← Community strategies
-│   │   │   ├── strategies/         ← Your strategies + detail view
-│   │   │   └── leaderboard/        ← Global rankings
-│   │   │
-│   │   ├── auth/callback/          ← Supabase OAuth callback
-│   │   ├── layout.tsx              ← Root layout (fonts, metadata)
-│   │   ├── manifest.ts             ← PWA manifest
-│   │   ├── robots.ts               ← robots.txt
-│   │   └── sitemap.ts              ← sitemap.xml
-│   │
-│   ├── components/
-│   │   ├── app/
-│   │   │   └── AppSidebar.tsx      ← Main navigation sidebar
-│   │   ├── brand/
-│   │   │   ├── QuantisLogo.tsx     ← Logo component
-│   │   │   └── MarketingBrandStamp.tsx
-│   │   ├── dashboard/
-│   │   │   ├── PortfolioSnapshot.tsx
-│   │   │   ├── AssetsTable.tsx
-│   │   │   ├── StrategyCard.tsx
-│   │   │   ├── StrategyList.tsx
-│   │   │   └── TradeHistoryFeed.tsx
-│   │   ├── editor/
-│   │   │   ├── CodeEditorPane.tsx  ← Monaco wrapper
-│   │   │   ├── ChartPane.tsx       ← Lightweight Charts integration
-│   │   │   ├── EditorToolbar.tsx   ← Run / Save / Go Live controls
-│   │   │   └── Terminal.tsx        ← Strategy output / logs
-│   │   ├── landing/
-│   │   │   ├── HeroSection.tsx
-│   │   │   ├── HowItWorks.tsx
-│   │   │   ├── Features.tsx
-│   │   │   ├── SocialProof.tsx
-│   │   │   ├── FloatingNav.tsx
-│   │   │   └── CTAFooter.tsx
-│   │   └── ui/
-│   │       ├── Button.tsx
-│   │       ├── Card.tsx
-│   │       └── Badge.tsx
-│   │
-│   ├── lib/
-│   │   ├── auth/
-│   │   │   └── redirect.ts         ← Post-auth redirect helpers
-│   │   ├── services/
-│   │   │   ├── dashboard.ts        ← Portfolio, trade history, prices
-│   │   │   ├── strategy.ts         ← CRUD + stats for algorithms
-│   │   │   ├── leaderboard.ts      ← Rankings with timeframe support
-│   │   │   └── discover.ts         ← Public strategy feed
-│   │   ├── supabase/
-│   │   │   ├── client.ts           ← Browser Supabase client
-│   │   │   └── server.ts           ← Server-side Supabase client
-│   │   └── trading/
-│   │       ├── markets.ts          ← 41 supported MARKET_SYMBOLS
-│   │       └── marketScanner.ts    ← Parallel backtest runner
-│   │
-│   ├── cron/
-│   │   └── index.ts                ← Scheduled bot engine (CF Worker)
-│   │
-│   ├── worker/
-│   │   ├── index.py                ← Python simulation engine (CF Worker)
-│   │   └── requirements.txt        ← RestrictedPython>=7.1
-│   │
-│   └── middleware.ts               ← Auth guard + redirect logic
-│
-├── next.config.ts
-├── open-next.config.ts             ← OpenNext Cloudflare adapter config
-├── wrangler.jsonc                  ← Cloudflare Workers config
-├── tailwind.config.ts
-└── package.json
+- **Next.js Route Handlers**: authenticated AI APIs, Supabase callback handling, validation, and streaming responses.
+- **Cloudflare Workers**: edge runtime for the app, scheduled bot engine, and Python simulation worker.
+- **Python simulation engine**: executes user strategy code against candle data through the Quantis portfolio API.
+- **Zod**: request validation for AI endpoints and typed request contracts.
+
+### AI
+
+- **Groq Llama 3.3 70B Versatile**: low-latency AI coach and strategy generation.
+- **Streaming SSE**: token-by-token AI Coach responses in the browser.
+- **Prompt-constrained code generation**: generator prompt injects the real worker interface and available runtime constraints.
+- **Generated-code safety gate**: blocks unsafe imports and file/process execution primitives before returning code.
+
+### Database
+
+- **Supabase Postgres**: users, algorithms, trade history, and portfolio state.
+- **Supabase Auth**: JWT sessions, OAuth callback flow, protected routes, and server-side user lookup.
+- **Row Level Security**: user-scoped strategy and portfolio data access.
+
+### Infrastructure
+
+- **OpenNext for Cloudflare**: builds the Next.js app for Cloudflare Workers.
+- **Wrangler**: local preview, secrets, and Cloudflare deployment.
+- **GitHub Actions**: CI on every push and deployment on `main`.
+- **Docker**: Node.js container path for local judging and reproducible app startup.
+
+## AI Features
+
+### AI Strategy Coach
+
+The AI Strategy Coach is a Groq-powered assistant built for algorithmic crypto trading. It has three modes:
+
+- **Chat**: conversational Q&A about risk, entries, exits, position sizing, and implementation details.
+- **Analyze**: paste strategy code and receive structured feedback covering logic, risk management, weaknesses, improvements, and verdict.
+- **Recommend**: send portfolio or backtest metrics and receive prioritized optimization actions.
+
+The route at `POST /api/ai/coach` streams Groq-compatible SSE chunks directly to the client. Request history is capped before forwarding to Groq, inputs are validated with Zod, and responses include no-store/security headers.
+
+```json
+{
+  "mode": "chat",
+  "message": "How can I reduce drawdown in a breakout strategy?",
+  "history": [
+    { "role": "user", "content": "My bot buys strong green candles." },
+    { "role": "assistant", "content": "Add volatility and trend filters first." }
+  ]
+}
 ```
 
----
+```json
+{
+  "mode": "analyze",
+  "strategy": "def on_candle(candle, portfolio):\n    close = float(candle[4])\n    if close > 65000:\n        portfolio['buy'](amount=0.5)",
+  "message": "Focus on false signals and exits."
+}
+```
 
-## Database Schema
+```json
+{
+  "mode": "recommend",
+  "portfolioData": {
+    "strategyName": "Momentum Scalper",
+    "totalReturn": "+8.2%",
+    "maxDrawdown": "-5.4%",
+    "winRate": "52%",
+    "totalTrades": 31
+  },
+  "message": "What should I improve first?"
+}
+```
 
-Quantis uses Supabase (Postgres) with the following tables:
+### AI Strategy Generator
 
-### `users`
-| Column | Type | Description |
-|:---|:---|:---|
-| `id` | `uuid` | Matches Supabase Auth user ID |
-| `username` | `text` | Display name (auto-generated from email if not set) |
-| `portfolio_usd` | `numeric` | Current simulated USD balance |
-| `portfolio_assets` | `jsonb` | Holdings map e.g. `{ "BTCUSDT": 0.023 }` |
-| `starting_balance` | `numeric` | Always `10000` — used for ROI calculation |
+The AI Strategy Generator turns a plain-English trading idea into a complete Python strategy that matches the Quantis worker interface. The API injects the real simulation contract into the system prompt:
 
-### `algorithms`
-| Column | Type | Description |
-|:---|:---|:---|
-| `id` | `uuid` | Strategy ID |
-| `user_id` | `uuid` | Owner (FK → users) |
-| `name` | `text` | Strategy display name |
-| `code` | `text` | Python source code |
-| `is_active` | `boolean` | Whether the cron bot should run this strategy |
-| `last_run_at` | `timestamptz` | Last cron execution timestamp |
+```python
+def on_candle(candle, portfolio):
+    # candle = [timestamp, open, high, low, close, volume]
+    # portfolio["cash"], portfolio["position"]
+    # portfolio["buy"](amount=0.0 to 1.0)
+    # portfolio["sell"](amount=0.0 to 1.0)
+```
 
-### `trade_history`
-| Column | Type | Description |
-|:---|:---|:---|
-| `id` | `uuid` | Trade ID |
-| `user_id` | `uuid` | FK → users |
-| `algorithm_id` | `uuid` | FK → algorithms (nullable) |
-| `symbol` | `text` | e.g. `"BTCUSDT"` |
-| `action` | `text` | `"BUY"` or `"SELL"` |
-| `price` | `numeric` | Execution price |
-| `amount` | `numeric` | Quantity traded |
-| `timestamp` | `timestamptz` | Trade time |
+Generated code is never auto-saved or auto-activated. The user must open it in the editor, review it, run a test, and explicitly save or go live.
 
-### `portfolio_snapshots`
-| Column | Type | Description |
-|:---|:---|:---|
-| `user_id` | `uuid` | FK → users |
-| `equity` | `numeric` | Portfolio value at snapshot time |
-| `timestamp` | `timestamptz` | Snapshot time (used for 24H / 7D leaderboard) |
+Example request:
 
----
+```json
+{
+  "description": "Buy pullbacks during an uptrend when volume expands. Sell on bearish reversal or after 4 percent profit.",
+  "riskLevel": "medium",
+  "preferredIndicators": ["EMA", "Volume", "ATR"]
+}
+```
+
+Example response:
+
+```json
+{
+  "strategyName": "Buy Pullbacks During An Uptrend",
+  "code": "\"\"\"EMA pullback strategy for Quantis...\"\"\"\n\ncloses = []\n\ndef on_candle(candle, portfolio):\n    close = float(candle[4])\n    ..."
+}
+```
+
+Safety checks reject generated code that does not implement `on_candle(candle, portfolio)` or contains dangerous operations such as `import os`, `import subprocess`, `import sys`, `__import__`, `open(`, `write(`, or `exec(`.
+
+## Architecture Diagram
+
+```text
+Browser
+  |
+  v
+[Next.js App Router on Cloudflare]
+  |                      |
+  |                      +--> [Groq API]
+  |                      |
+  |                      +--> [Supabase Postgres]
+  |
+  +--> [Python Sim Worker] --> [Binance Market Data]
+
+[Cloudflare Cron Worker]
+  |
+  v
+[Python Sim Worker]
+  |
+  v
+[Supabase]
+```
+
+The browser talks to the Cloudflare-hosted Next.js app for authenticated pages and API routes. The app uses Supabase for auth/data and Groq for AI workflows. Manual backtests and scheduled cron runs execute strategies through the Python simulation worker, then persist trades and portfolio updates back to Supabase.
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Node.js** 18+
-- **Python** 3.11+ *(for local worker development)*
-- A [Supabase](https://supabase.com) project with the schema above
-- A [Cloudflare](https://cloudflare.com) account *(for deployment and the Python worker)*
+- Node.js 20+
+- npm
+- Python 3.11+ for the simulation worker container
+- Supabase project
+- Groq API key
+- Cloudflare account and Wrangler for deployment
+- Docker Desktop if using the containerized path
 
-### 1. Clone & Install
+### Clone
 
 ```bash
-git clone https://github.com/your-org/quantis.git
-cd quantis
+git clone https://github.com/NA0XY/Quantis.git
+cd Quantis
+```
+
+### Install
+
+```bash
 npm install
 ```
 
-### 2. Configure Environment Variables
+### Environment Setup
+
+Create a local environment file:
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Fill in your values — see [Environment Variables](#environment-variables) below.
+Minimum local variables:
 
-### 3. Run the Dev Server
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser/server Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key for browser auth |
+| `SUPABASE_SERVICE_ROLE_KEY` | Trusted backend and worker operations |
+| `GROQ_API_KEY` | AI Coach and AI Generator requests |
+| `NEXT_PUBLIC_WORKER_URL` | Python simulation worker URL |
+
+### Run Dev
 
 ```bash
 npm run dev
@@ -325,9 +224,98 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> The Python simulation worker runs separately on Cloudflare Workers. For local development, point `NEXT_PUBLIC_WORKER_URL` at a deployed worker or run it locally with `wrangler dev` from the worker directory.
+If you want local backtests, run or deploy the simulation worker and set `NEXT_PUBLIC_WORKER_URL` accordingly.
 
----
+### Run Tests
+
+```bash
+npm test
+npm run lint
+npm run typecheck
+```
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+The app will be available at [http://localhost:3000](http://localhost:3000).
+
+## Environment Variables
+
+| Variable | Required | Description | Where to get it |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL exposed to the browser. | Supabase project settings |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Public anon key for Supabase Auth and RLS-protected browser queries. | Supabase project API settings |
+| `SUPABASE_URL` | Recommended | Supabase project URL for worker-style services that do not use `NEXT_PUBLIC_`. | Supabase project settings |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes for cron/worker writes | Server-only key for trusted writes such as trade persistence and portfolio updates. Never expose in browser code. | Supabase project API settings |
+| `GROQ_API_KEY` | Yes for AI | Groq API key used by AI Coach and AI Strategy Generator. | [Groq Console](https://console.groq.com) |
+| `NEXT_PUBLIC_WORKER_URL` | Yes for backtests | URL of the Python simulation worker used by the editor scanner. | Cloudflare Workers dashboard or local Wrangler URL |
+| `NEXT_PUBLIC_SITE_URL` | Recommended | Canonical app URL used for auth redirects and metadata. | Your deployed app domain |
+| `SIM_WORKER_URL` | Yes for cron | Simulation worker URL used by the scheduled bot worker. | Cloudflare Workers dashboard |
+| `CRON_RUN_SECRET` | Yes for manual cron trigger | Bearer token protecting manual cron execution endpoint. | Generate locally with a password manager or `openssl rand` |
+| `CLOUDFLARE_API_TOKEN` | CI deploy only | GitHub Actions token for Wrangler deploys. | Cloudflare API Tokens |
+| `CLOUDFLARE_ACCOUNT_ID` | CI deploy only | Cloudflare account ID for deployment. | Cloudflare dashboard |
+| `GOOGLE_CLIENT_ID` | Optional | Google OAuth client ID if configuring Google provider outside the Supabase dashboard. | Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | Optional | Google OAuth client secret if configuring Google provider outside the Supabase dashboard. | Google Cloud Console |
+
+For the current Supabase Auth setup, Google OAuth is normally configured in the Supabase dashboard under Authentication Providers. The app itself relies on Supabase Auth callbacks rather than reading Google secrets directly.
+
+## Deployment
+
+Quantis deploys the Next.js app to Cloudflare Workers through OpenNext.
+
+### Configure Cloudflare Secrets
+
+Run these from the project root after logging in with Wrangler:
+
+```bash
+npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
+npx wrangler secret put NEXT_PUBLIC_SUPABASE_ANON_KEY
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret put GROQ_API_KEY
+npx wrangler secret put NEXT_PUBLIC_SITE_URL
+npx wrangler secret put NEXT_PUBLIC_WORKER_URL
+```
+
+Configure cron worker secrets:
+
+```bash
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config wrangler.cron.jsonc
+npx wrangler secret put CRON_RUN_SECRET --config wrangler.cron.jsonc
+npx wrangler secret put SIM_WORKER_URL --config wrangler.cron.jsonc
+```
+
+### Deploy the Web App
+
+```bash
+npm run deploy
+```
+
+This runs the OpenNext Cloudflare build and deploys through Wrangler.
+
+### Deploy the Cron Worker
+
+```bash
+npm run deploy:cron
+```
+
+The cron worker runs active algorithms on a five-minute schedule and persists new simulated trades to Supabase.
+
+### GitHub Actions Deployment
+
+Add these repository secrets before relying on automatic deployment:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
+```
+
+Runtime secrets such as `GROQ_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` should also be configured on Cloudflare with `wrangler secret put`.
 
 ## Docker
 
@@ -340,7 +328,7 @@ cp .env.local.example .env.local
 docker compose up --build
 ```
 
-The app will be available at http://localhost:3000.
+The app will be available at [http://localhost:3000](http://localhost:3000).
 
 To run only the Next.js frontend:
 
@@ -349,350 +337,57 @@ docker build -t quantis .
 docker run -p 3000:3000 --env-file .env.local quantis
 ```
 
----
+## CI/CD
+
+Quantis uses GitHub Actions for automated quality gates and Cloudflare deployment.
+
+- **CI** runs on every push to any branch and on pull requests to `main`.
+- **CI pipeline** installs dependencies, runs ESLint, runs TypeScript checks, executes Vitest, performs Python worker linting, and builds the Next.js app.
+- **Deploy pipeline** runs on pushes to `main`, repeats the quality gates, builds the OpenNext Cloudflare bundle, and deploys with Wrangler.
+- **Required GitHub secrets**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`.
+
+Workflow files:
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/deploy.yml`
 
 ## Testing
 
-Quantis uses [Vitest](https://vitest.dev) for unit tests, with `jsdom` and Testing Library available for component-level coverage.
+Run the complete test suite:
 
 ```bash
-npm test            # run the unit test suite once
-npm run test:watch  # watch mode while developing
-npm run test:ui     # open the Vitest UI
+npm test
 ```
 
-Current coverage targets the core trading and backend logic:
-
-- `src/lib/trading/marketScanner.ts` — worker request handling, error paths, market ranking, and scan batching.
-- `src/lib/trading/markets.ts` — supported market universe integrity and symbol transformations.
-- `src/lib/services/strategy.ts` — strategy persistence, Supabase query construction, trade logging, and stat calculations with mocked clients.
-- `src/app/api/ai/coach/route.ts` — Groq request construction, mode formatting, auth/error handling, history limits, and SSE response headers.
-
----
-
-## Environment Variables
-
-### Next.js App (`.env.local`)
-
-| Variable | Required | Description |
-|:---|:---:|:---|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon/public key |
-| `SUPABASE_URL` | ✅ | Supabase project URL for worker-style local services |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase service role key for trusted backend/worker operations |
-| `GROQ_API_KEY` | ✅ | Groq API key for the AI Strategy Coach |
-| `NEXT_PUBLIC_WORKER_URL` | ✅ | URL of the deployed Python simulation worker |
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
-GROQ_API_KEY=your_groq_api_key_here
-NEXT_PUBLIC_WORKER_URL=https://quantis-sim-engine.your-subdomain.workers.dev
-```
-
-### Cron Worker (Cloudflare Worker Secrets)
-
-Set these via `wrangler secret put` or the Cloudflare dashboard:
-
-| Secret | Required | Description |
-|:---|:---:|:---|
-| `SUPABASE_URL` | ✅ | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service role key (bypasses RLS) |
-| `SIM_WORKER_URL` | ✅ | URL of the Python simulation worker |
-| `CRON_RUN_SECRET` | ✅ | Bearer token for the manual `/run` endpoint |
+Open Vitest UI:
 
 ```bash
-wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-wrangler secret put CRON_RUN_SECRET
+npm run test:ui
 ```
 
----
+Current test coverage focuses on core business logic and security-critical API behavior:
 
-## Scripts
+| Test file | Coverage |
+| --- | --- |
+| `src/lib/trading/__tests__/marketScanner.test.ts` | Market scan batching, result ranking, worker failures, and signal selection behavior. |
+| `src/lib/trading/__tests__/markets.test.ts` | Supported symbol definitions, formatting helpers, and edge cases. |
+| `src/lib/services/__tests__/strategy.test.ts` | Strategy CRUD, Supabase query construction, user scoping, trade logging, and stat calculations. |
+| `src/app/api/ai/coach/__tests__/route.test.ts` | AI Coach validation, auth, history caps, prompt construction, rate limiting, sanitization, and SSE headers. |
+| `src/app/api/ai/generate-strategy/__tests__/route.test.ts` | AI Generator validation, auth, Groq request construction, interface prompt injection, content extraction, generated-name creation, and safety checks. |
+
+Recommended pre-commit checks:
 
 ```bash
-# Development
-npm run dev           # Start Next.js dev server on localhost:3000
-npm run build         # Production build
-
-# Cloudflare
-npm run preview       # Build + preview locally via Wrangler
-npm run deploy        # Build + deploy to Cloudflare Workers
-npm run upload        # Build + upload assets only (no deploy)
-npm run cf-typegen    # Generate TypeScript types for CF env bindings
-
-# Quality
-npm run lint          # ESLint
-npm run typecheck     # tsc --noEmit (no output, type errors only)
+npm run lint
+npm run typecheck
+npm test -- --passWithNoTests
+npm run build
 ```
 
----
+## API Reference
 
-## How Strategies Work
-
-Every strategy is a single Python function called `on_candle`. The simulation engine calls it once per candle (1-minute interval by default) with the current candle data and a mutable portfolio object.
-
-### Function Signature
-
-```python
-def on_candle(candle, portfolio):
-    """
-    candle    : list  — [timestamp, open, high, low, close, volume]
-    portfolio : dict  — { cash, position, buy(amount), sell(amount) }
-    """
-```
-
-### Portfolio API
-
-| Property / Method | Type | Description |
-|:---|:---|:---|
-| `portfolio["cash"]` | `float` | Available USD cash |
-| `portfolio["position"]` | `float` | Current asset quantity held |
-| `portfolio.buy(amount)` | `function` | Buy `amount` fraction of available cash (0.0–1.0) |
-| `portfolio.sell(amount)` | `function` | Sell `amount` fraction of current position (0.0–1.0) |
-
-### Example Strategy — SMA Crossover
-
-```python
-def on_candle(candle, portfolio):
-    # candle = [timestamp, open, high, low, close, volume]
-    close = candle[4]
-
-    # Maintain a rolling window using a global list
-    if "prices" not in globals():
-        global prices
-        prices = []
-
-    prices.append(close)
-    if len(prices) > 50:
-        prices.pop(0)
-
-    if len(prices) < 20:
-        return  # Not enough data yet
-
-    sma_20 = sum(prices[-20:]) / 20
-    sma_50 = sum(prices) / len(prices)
-
-    # Golden cross — buy signal
-    if sma_20 > sma_50 * 1.01 and portfolio["cash"] > 0:
-        portfolio.buy(0.5)   # Deploy 50% of available cash
-
-    # Death cross — sell signal
-    elif sma_20 < sma_50 and portfolio["position"] > 0:
-        portfolio.sell(1.0)  # Liquidate full position
-```
-
-### Simulation Output
-
-After each run the engine returns:
-
-```json
-{
-  "success": true,
-  "trades": [ { "action": "BUY", "price": 67420.5, "amount": 0.074, "timestamp": "..." } ],
-  "equity": [ 10000, 10043, 10091, ... ],
-  "metrics": {
-    "final_balance": 11240.33,
-    "net_profit": 1240.33,
-    "max_drawdown": 0.043,
-    "win_rate": 0.61,
-    "total_trades": 18,
-    "final_assets": { "BTCUSDT": 0.0 }
-  },
-  "logs": [ "Strategy output from print() calls" ]
-}
-```
-
-### Sandbox Constraints
-
-Strategies run inside a **RestrictedPython** sandbox:
-
-- No network access (`fetch`, `requests`, `urllib` are blocked)
-- No file system access
-- No `import` of arbitrary modules (only `math` is injected)
-- Deterministic execution — same candles always produce the same result
-- `print()` is captured and surfaced in the editor terminal
-
----
-
-## Market Scanner
-
-The market scanner runs your strategy against all **41 supported Binance USDT pairs** and returns the best-performing market.
-
-### Supported Markets
-
-```
-BTC  ETH  SOL  BNB  XRP  ADA  DOGE  MATIC  DOT  TRX
-LTC  SHIB AVAX LINK ATOM UNI  BCH   XLM    NEAR FIL
-ICP  APT  LDO  HBAR ETC  KAS  ARB   OP     MKR  AAVE
-RNDR INJ  STX  SUI  SEI  TIA  FET   AGIX   WLD  ORDI PEPE
-```
-*(all paired with USDT)*
-
-### Scan Process
-
-```
-Start Scan
-    │
-    ├── Batch 1: BTC ETH SOL BNB XRP ADA  ──▶  6 parallel simulations
-    ├── Batch 2: DOGE MATIC DOT TRX LTC SHIB
-    ├── ...
-    └── Batch 7: FET AGIX WLD ORDI PEPE
-                                              │
-                                              ▼
-                                    Rank by net_profit
-                                    (trade activity tiebreaker)
-                                              │
-                                              ▼
-                                    Return best market + full results
-```
-
-### Ranking Logic
-
-Markets are ranked by:
-1. Has at least 1 trade (strategies with no signals are ranked last)
-2. Highest `net_profit`
-3. Highest `total_trades` as tiebreaker
-
----
-
-## Cron Bot Engine
-
-The cron worker (`src/cron/index.ts`) is a standalone Cloudflare Worker that runs on a **`*/5 * * * *`** schedule.
-
-### Cycle Steps
-
-```
-Every 5 minutes
-      │
-      ▼
-Fetch up to 3 active algorithms from Supabase
-      │
-      ▼  (for each algorithm)
-Scan all 41 markets via Sim Worker
-      │
-      ▼
-Select best market (highest net profit)
-      │
-      ▼
-Filter trades newer than last_run_at
-      │
-      ▼
-Insert new trades → trade_history
-Update portfolio_usd + portfolio_assets → users
-Update last_run_at → algorithms
-      │
-      ▼
-Log cycle summary to console
-```
-
-### Manual Trigger
-
-```bash
-curl -X POST https://your-cron-worker.workers.dev/run \
-  -H "Authorization: Bearer YOUR_CRON_RUN_SECRET"
-```
-
-### Health Check
-
-```bash
-curl https://your-cron-worker.workers.dev/health
-```
-
-```json
-{
-  "ok": true,
-  "worker": "quantis-bot-cron",
-  "schedule": "*/5 * * * *",
-  "bindings": {
-    "has_supabase_service_role_key": true,
-    "has_cron_run_secret": true
-  }
-}
-```
-
----
-
-## CI/CD
-
-Quantis uses GitHub Actions for automated checks and Cloudflare deployment.
-
-- CI runs on every push and on pull requests to `main`: lint, typecheck, test, Python worker lint, and production build.
-- Deploy runs automatically on pushes to `main` after repeating lint, typecheck, test, build, and OpenNext bundle generation.
-- Required GitHub repository secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`.
-- Cloudflare runtime secrets such as `GROQ_API_KEY` should still be configured on the Worker with `wrangler secret put`.
-
----
-
-## Deployment
-
-Quantis deploys to **Cloudflare Workers** via the [OpenNext Cloudflare adapter](https://opennext.js.org/cloudflare).
-
-### Deploy the Next.js App
-
-```bash
-npm run deploy
-```
-
-This runs:
-1. `opennextjs-cloudflare build` — adapts the Next.js build for the CF Workers runtime
-2. `opennextjs-cloudflare deploy` — pushes via Wrangler using `wrangler.jsonc`
-
-### Deploy the Python Simulation Worker
-
-The Python worker lives in `src/worker/index.py` and is deployed separately as a Cloudflare Python Worker.
-
-```bash
-# From the worker directory or with a separate wrangler config
-wrangler deploy
-```
-
-### Deploy the Cron Worker
-
-```bash
-# From the cron directory or with a separate wrangler config
-wrangler deploy
-```
-
-### Generate Cloudflare Env Types
-
-```bash
-npm run cf-typegen
-```
-
-This writes `cloudflare-env.d.ts` with typed bindings from `wrangler.jsonc`.
-
----
-
-## Routes Reference
-
-### Public Routes
-
-| Route | Description |
-|:---|:---|
-| `/` | Landing page |
-| `/login` | Sign in with email/password |
-| `/signup` | Create a new account |
-| `/auth/callback` | Supabase OAuth callback handler |
-
-### Protected Routes (require auth)
-
-| Route | Description |
-|:---|:---|
-| `/dashboard` | Portfolio overview, P&L, trade history |
-| `/editor` | Strategy IDE — write, scan, go live |
-| `/markets` | Market browser |
-| `/strategies` | List of your saved strategies |
-| `/strategies/[id]` | Strategy detail — stats, trades, performance |
-| `/discover` | Browse community strategies |
-| `/leaderboard` | Global rankings with timeframe filters |
-
-> Unauthenticated requests to protected routes are redirected to `/login?redirectTo=<path>`. Authenticated users visiting `/login` or `/signup` are redirected to `/dashboard`.
-
----
+Detailed API notes live in [docs/api.md](./docs/api.md). It documents the AI Coach streaming endpoint, request validation, response shapes, rate limits, and curl examples. The AI Strategy Generator route follows the same validation-first pattern and is covered by its route tests.
 
 ## License
 
-Private — all rights reserved.
+MIT

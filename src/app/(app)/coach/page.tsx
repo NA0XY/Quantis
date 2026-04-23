@@ -1,4 +1,5 @@
 import { AIStrategyCoach, type PortfolioSnapshot } from "@/components/ai/AIStrategyCoach";
+import { StrategyGeneratorEditorBridge } from "@/components/ai/StrategyGenerator";
 import { Badge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
 
@@ -145,6 +146,23 @@ export default async function CoachPage({ searchParams }: CoachPageProps) {
           defaultStrategyName={latestStrategy?.name ?? undefined}
           initialTab={getInitialMode(params.mode)}
         />
+
+        <section className="pt-8">
+          <div className="mb-6">
+            <Badge className="mb-4 bg-primary text-ink border-2 border-ink shadow-[4px_4px_0_#000] uppercase tracking-widest font-black">
+              Generator
+            </Badge>
+            <h2 className="text-[clamp(2.5rem,5vw,4rem)] font-black text-ink uppercase tracking-tighter leading-none">
+              AI Strategy Generator
+            </h2>
+            <div className="mt-2 h-3 w-56 bg-primary border-2 border-ink" />
+            <p className="mt-4 text-ink/60 font-bold max-w-2xl">
+              Turn a plain-English trading idea into runnable Quantis Python code, then inspect and edit it before saving or activating.
+            </p>
+          </div>
+
+          <StrategyGeneratorEditorBridge />
+        </section>
       </div>
     </div>
   );

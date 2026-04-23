@@ -73,6 +73,34 @@ interface SimulationResult {
   error?: string;
 }
 
+interface GeneratedStrategyPayload {
+  code: string;
+  name: string;
+}
+
+function parseGeneratedStrategyPayload(rawValue: string): GeneratedStrategyPayload | null {
+  try {
+    const parsed = JSON.parse(rawValue) as unknown;
+    if (
+      typeof parsed === "object"
+      && parsed !== null
+      && "code" in parsed
+      && "name" in parsed
+      && typeof parsed.code === "string"
+      && typeof parsed.name === "string"
+    ) {
+      return {
+        code: parsed.code,
+        name: parsed.name,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function EditorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,6 +110,7 @@ function EditorContent() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string>("BTCUSDT");
   const [logs, setLogs] = useState<TerminalLog[]>([]);
+  const [generatedNotice, setGeneratedNotice] = useState<string | null>(null);
 
 
   const [backtestResults, setBacktestResults] = useState<SimulationResult | null>(null);
@@ -95,6 +124,41 @@ function EditorContent() {
   useEffect(() => {
     const id = searchParams.get('id');
     const isNewStrategy = searchParams.get('new') === '1';
+    const isGeneratedStrategy = searchParams.get('generated') === 'true';
+    const generatedStrategy = window.localStorage.getItem('quantis_generated_strategy');
+
+    if ((isGeneratedStrategy || (!id && generatedStrategy)) && generatedStrategy) {
+      const payload = parseGeneratedStrategyPayload(generatedStrategy);
+      window.localStorage.removeItem('quantis_generated_strategy');
+
+      if (payload) {
+        setStrategyId(null);
+        setStrategyName(payload.name);
+        setCode(payload.code);
+        setIsActive(false);
+        setBacktestResults(null);
+        setMarkers([]);
+        setGeneratedNotice("AI-generated strategy loaded - review before activating.");
+        setLogs(prev => [
+          ...prev,
+          createLog(`AI-GENERATED DRAFT: "${payload.name}" loaded into editor. Review before saving or going live.`)
+        ]);
+        router.replace('/editor?new=1');
+        return;
+      }
+
+      setGeneratedNotice("Generated strategy payload could not be loaded.");
+      setLogs(prev => [...prev, createLog("ERROR: AI-generated strategy payload was invalid.")]);
+      router.replace('/editor?new=1');
+      return;
+    }
+
+    if (isGeneratedStrategy) {
+      setGeneratedNotice("No AI-generated strategy was found. Generate one from the Coach page first.");
+      setLogs(prev => [...prev, createLog("WARN: No AI-generated strategy payload found in local storage.")]);
+      router.replace('/editor?new=1');
+      return;
+    }
 
     if (id) {
       setLogs(prev => [...prev, createLog(`Loading algorithm config [${id}]...`)]);
@@ -286,6 +350,18 @@ function EditorContent() {
         strategyName={strategyName}
         onNameChange={setStrategyName}
       />
+      {generatedNotice ? (
+        <div className="bg-primary border-b-4 border-ink px-6 py-3 text-ink font-black uppercase tracking-widest text-xs flex items-center justify-between gap-4 shadow-[0_4px_0_#111]">
+          <span>{generatedNotice}</span>
+          <button
+            type="button"
+            onClick={() => setGeneratedNotice(null)}
+            className="bg-chalk border-2 border-ink px-3 py-1 shadow-[2px_2px_0_#111] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         <CodeEditorPane code={code} onChange={(val) => setCode(val || "")} />
         <div className="w-full lg:w-[45%] h-full flex flex-col">

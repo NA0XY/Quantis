@@ -87,7 +87,7 @@ Use strategy code or a detailed strategy description to receive structured analy
 ```json
 {
   "mode": "analyze",
-  "strategy": "def on_candle(candle, portfolio):\n    if float(candle[4]) > float(candle[1]):\n        portfolio.buy(amount=1)",
+  "strategy": "def on_candle(candle, portfolio):\n    if float(candle[4]) > float(candle[1]):\n        portfolio[\"buy\"](amount=1)",
   "message": "Focus on risk management and false breakout handling."
 }
 ```
@@ -134,7 +134,7 @@ curl -N http://localhost:3000/api/ai/coach \
   -H "Content-Type: application/json" \
   -d '{
     "mode": "analyze",
-    "strategy": "def on_candle(candle, portfolio):\n    close = float(candle[4])\n    if close > 65000:\n        portfolio.buy(amount=1)",
+    "strategy": "def on_candle(candle, portfolio):\n    close = float(candle[4])\n    if close > 65000:\n        portfolio[\"buy\"](amount=1)",
     "message": "Find edge cases."
   }'
 ```
@@ -153,5 +153,94 @@ curl -N http://localhost:3000/api/ai/coach \
       "totalTrades": 19
     },
     "message": "What should I improve first?"
+  }'
+```
+
+## POST /api/ai/generate-strategy
+
+AI Strategy Generator endpoint powered by Groq using Llama 3.3 70B. It accepts a plain-English trading idea, risk level, and optional preferred indicators, then returns complete Python code that matches the Quantis execution interface.
+
+### Request Body
+
+| Field | Type | Required | Limit | Description |
+| --- | --- | --- | --- | --- |
+| `description` | `string` | Required | 1,000 characters | Plain-English strategy idea. Whitespace is trimmed before use. |
+| `riskLevel` | `"low" | "medium" | "high"` | Optional | Defaults to `"medium"` | Controls how conservative the generated strategy should be. |
+| `preferredIndicators` | `string[]` | Optional | Max 5 items | Technical indicators the user wants considered, such as RSI, EMA, ATR, MACD, or Volume. |
+
+### Strategy Interface
+
+Generated code must implement:
+
+```python
+def on_candle(candle, portfolio):
+    # candle = [timestamp, open, high, low, close, volume]
+    # portfolio["cash"]
+    # portfolio["position"]
+    # portfolio["buy"](amount=0.0 to 1.0)
+    # portfolio["sell"](amount=0.0 to 1.0)
+```
+
+The generator prompt tells Groq that custom `portfolio` keys are not persisted between candles, so rolling indicators should use module-level lists or dictionaries.
+
+### Response
+
+#### 200
+
+```json
+{
+  "code": "\"\"\"Generated strategy docstring...\"\"\"\n\ndef on_candle(candle, portfolio):\n    ...",
+  "strategyName": "Buy Pullbacks During An Uptrend"
+}
+```
+
+#### 400
+
+Invalid request body.
+
+```json
+{
+  "error": "Invalid request",
+  "details": {
+    "fieldErrors": {}
+  }
+}
+```
+
+#### 401
+
+User is not authenticated.
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+#### 422
+
+Generated code failed safety validation.
+
+```json
+{
+  "error": "Generated code failed safety check"
+}
+```
+
+The safety gate rejects code that does not implement `on_candle(candle, portfolio)` or contains dangerous operations such as `import os`, `import subprocess`, `import sys`, `__import__`, `open(`, `write(`, or `exec(`.
+
+#### 500
+
+Internal server error, missing `GROQ_API_KEY`, or Groq API failure.
+
+### Example
+
+```bash
+curl http://localhost:3000/api/ai/generate-strategy \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Buy pullbacks during an uptrend when volume expands. Sell on bearish reversal or after 4 percent profit.",
+    "riskLevel": "medium",
+    "preferredIndicators": ["EMA", "Volume", "ATR"]
   }'
 ```
