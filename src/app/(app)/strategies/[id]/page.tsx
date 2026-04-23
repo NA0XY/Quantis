@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { MARKET_SYMBOLS } from '@/lib/trading/markets';
 import { formatScannerMoney, scanMarkets } from '@/lib/trading/marketScanner';
 import { Badge } from '@/components/ui/Badge';
-import { Loader2, ArrowLeft, Square, Activity, DollarSign, BarChart3, Radio, Code2, Play } from 'lucide-react';
+import { Loader2, ArrowLeft, Square, Activity, DollarSign, BarChart3, Radio, Code2, Play, Bot } from 'lucide-react';
 
 function formatUsd(value: number) {
   return value.toLocaleString(undefined, {
@@ -240,6 +240,23 @@ export default function StrategyDetailPage() {
             <div className="flex items-center space-x-4 border-b-8 border-ink pb-4">
               <Activity className="text-primary w-8 h-8" />
               <h2 className="text-3xl font-black text-ink uppercase tracking-tighter">Live Logs</h2>
+            </div>
+
+            <div className="bg-primary border-4 border-ink shadow-[8px_8px_0_#111] p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <Bot size={20} className="text-ink" />
+                <span className="font-black uppercase tracking-widest text-xs text-ink">AI Strategy Coach</span>
+              </div>
+              <p className="text-ink/70 font-bold text-sm mb-4">
+                Get AI-powered analysis and recommendations for this strategy.
+              </p>
+              <Link
+                href={`/coach?strategyId=${strategy.id}&mode=analyze`}
+                className="flex items-center justify-center gap-2 bg-ink text-chalk border-4 border-ink shadow-[4px_4px_0_#FF90E8] px-4 py-3 font-black uppercase tracking-widest text-xs hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all w-full"
+              >
+                <Bot size={14} />
+                Analyze with AI
+              </Link>
             </div>
 
             <div className="grid grid-cols-3 gap-3">

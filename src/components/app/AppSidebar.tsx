@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, Code2, Trophy, LogOut, Compass, BarChart3 } from 'lucide-react';
+import { LayoutGrid, Code2, Trophy, LogOut, Compass, BarChart3, Bot } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { QuantisLogo } from '@/components/brand/QuantisLogo';
 
@@ -45,6 +45,7 @@ export function AppSidebar() {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
     { href: '/editor', label: 'Editor', icon: Code2 },
     { href: '/markets', label: 'Markets', icon: BarChart3 },
+    { href: '/coach', label: 'AI Coach', icon: Bot },
     { href: '/discover', label: 'Discover', icon: Compass },
     { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   ];
