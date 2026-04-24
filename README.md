@@ -6,7 +6,7 @@
 
 ## Screenshot / Demo
 
-> 🎬 **[Watch the demo video](YOUR_VIDEO_URL)**
+> 🎬 **[Watch the demo video](https://youtu.be/3ZmDniMLMPQ)**
 
 ![Dashboard](./public/og-image.svg)
 
