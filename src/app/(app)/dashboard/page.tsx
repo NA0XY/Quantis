@@ -18,6 +18,11 @@ export default function DashboardPage() {
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [activeBots, setActiveBots] = useState(0);
   const [loading, setLoading] = useState(true);
+  const snapshotRef = React.useRef(snapshot);
+
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
 
   const fetchData = React.useCallback(async () => {
     try {
@@ -50,15 +55,15 @@ export default function DashboardPage() {
   }, []);
 
   const refreshPrices = React.useCallback(async () => {
-    if (snapshot) {
-      const assets = snapshot.portfolio_assets as Record<string, number>;
-      const symbols = Object.keys(assets).filter(s => Number(assets[s]) > 1e-10);
-      if (symbols.length > 0) {
-        const newPrices = await dashboardService.getMarketPrices(symbols);
-        setPrices(prev => ({ ...prev, ...newPrices }));
-      }
+    const assets = snapshotRef.current.portfolio_assets as Record<string, number>;
+    const symbols = Object.keys(assets).filter(s => Number(assets[s]) > 1e-10);
+    if (symbols.length > 0) {
+      const newPrices = await dashboardService.getMarketPrices(symbols);
+      setPrices(prev => ({ ...prev, ...newPrices }));
+    } else {
+      setPrices({});
     }
-  }, [snapshot]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -68,21 +73,28 @@ export default function DashboardPage() {
 
     const supabase = createClient();
     let dashboardChannel: ReturnType<typeof supabase.channel> | null = null;
+    let isCancelled = false;
 
     const subscribeToDashboardUpdates = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || isCancelled) return;
 
       dashboardChannel = supabase
-        .channel(`dashboard-updates-${user.id}`)
+        .channel(`dashboard-updates-${user.id}-${crypto.randomUUID()}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trade_history', filter: `user_id=eq.${user.id}` }, fetchData)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` }, fetchData)
         .subscribe();
+
+      if (isCancelled && dashboardChannel) {
+        supabase.removeChannel(dashboardChannel);
+        dashboardChannel = null;
+      }
     };
 
     subscribeToDashboardUpdates();
 
     return () => {
+      isCancelled = true;
       clearInterval(priceInterval);
       if (dashboardChannel) {
         supabase.removeChannel(dashboardChannel);

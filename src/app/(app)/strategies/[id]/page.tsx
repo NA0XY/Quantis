@@ -6,7 +6,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { strategyService, StrategyStats } from '@/lib/services/strategy';
 import { createClient } from '@/lib/supabase/client';
 import { MARKET_SYMBOLS } from '@/lib/trading/markets';
-import { formatScannerMoney, scanMarkets } from '@/lib/trading/marketScanner';
+import {
+  formatScannerMoney,
+  resolveSimulationWorkerUrl,
+  scanMarkets,
+  toUserSafeSimulationError
+} from '@/lib/trading/marketScanner';
 import { Badge } from '@/components/ui/Badge';
 import { Loader2, ArrowLeft, Square, Activity, DollarSign, BarChart3, Radio, Code2, Play, Bot } from 'lucide-react';
 
@@ -46,7 +51,7 @@ export default function StrategyDetailPage() {
 
     const supabase = createClient();
     const channel = supabase
-      .channel(`strategy-detail-${id}`)
+      .channel(`strategy-detail-${id}-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'algorithms', filter: `id=eq.${id}` },
@@ -67,11 +72,7 @@ export default function StrategyDetailPage() {
   const executeLiveCycle = useCallback(async () => {
     if (!stats?.strategy.is_active) return;
 
-    const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
-    if (!workerUrl) {
-      setExecutionLogs(prev => [...prev, 'ERROR: NEXT_PUBLIC_WORKER_URL is not configured.']);
-      return;
-    }
+    const workerUrl = resolveSimulationWorkerUrl();
 
     setExecuting(true);
     setExecutionLogs([
@@ -112,7 +113,7 @@ export default function StrategyDetailPage() {
       setExecutionLogs(prev => [...prev, 'SUCCESS: Trades linked to this strategy and portfolio updated.']);
       await fetchData();
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = toUserSafeSimulationError(err);
       setExecutionLogs(prev => [...prev, `ERROR: ${message}`]);
     } finally {
       setExecuting(false);
