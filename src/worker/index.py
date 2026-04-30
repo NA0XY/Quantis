@@ -40,6 +40,25 @@ def on_data_wrapper(strategy_code, candles, symbol="BTCUSDT"):
         "math": __import__("math"),
     }
 
+    def normalize_candle(raw_candle):
+        """
+        Normalize candle payloads to the Quantis strategy contract:
+        [timestamp, open, high, low, close, volume]
+        Binance klines can include extra trailing fields, so we trim to 6.
+        """
+        if not isinstance(raw_candle, (list, tuple)):
+            raise ValueError("Invalid candle payload: expected list/tuple.")
+        if len(raw_candle) < 6:
+            raise ValueError("Invalid candle payload: expected at least 6 values.")
+        return [
+            raw_candle[0],
+            raw_candle[1],
+            raw_candle[2],
+            raw_candle[3],
+            raw_candle[4],
+            raw_candle[5],
+        ]
+
     try:
         # Compile and execute the user strategy
         exec(strategy_code, exec_globals)
@@ -49,7 +68,8 @@ def on_data_wrapper(strategy_code, candles, symbol="BTCUSDT"):
             raise ValueError("Function 'on_candle(candle, portfolio)' not found in strategy code.")
 
         # Run the simulation
-        for candle in candles:
+        for raw_candle in candles:
+            candle = normalize_candle(raw_candle)
             # candle is [timestamp, open, high, low, close, volume]
             c_close = float(candle[4])
 
@@ -111,6 +131,8 @@ def on_data_wrapper(strategy_code, candles, symbol="BTCUSDT"):
 
         # Calculate metrics
         equity = portfolio["equity_curve"]
+        if len(equity) == 0:
+            raise ValueError("No candle data available for simulation.")
         final_value = equity[-1]
         max_dd = 0
         peak = equity[0]
