@@ -65,6 +65,38 @@ const MARKET_SYMBOLS = [
 ] as const;
 
 const CRON_PATTERN = "*/5 * * * *";
+const CRON_INTERVAL_MS = 5 * 60 * 1000;
+const MAX_ACTIVE_ALGORITHMS_PER_CYCLE = 3;
+
+// Cloudflare Workers free plan safety budget:
+// 50 external subrequests max per invocation.
+// We reserve budget for Supabase reads/writes and keep headroom.
+const MAX_EXTERNAL_SUBREQUESTS = 50;
+const RESERVED_BASE_REQUESTS = 1; // getActiveAlgorithms
+const RESERVED_REQUESTS_PER_ALGORITHM = 3; // trades insert + user patch + algo patch
+const SUBREQUEST_HEADROOM = 4;
+const MIN_MARKETS_PER_ALGORITHM = 6;
+
+function hashSeed(input: string) {
+  let hash = 0;
+  for (let index = 0; index < input.length; index++) {
+    hash = (hash * 31 + input.charCodeAt(index)) % 2147483647;
+  }
+  return hash;
+}
+
+function selectSymbolsForCycle(algorithmId: string, scheduledTimeMs: number, count: number) {
+  const safeCount = Math.max(1, Math.min(MARKET_SYMBOLS.length, count));
+  const cycle = Math.floor(scheduledTimeMs / CRON_INTERVAL_MS);
+  const start = (hashSeed(algorithmId) + cycle * safeCount) % MARKET_SYMBOLS.length;
+  const selected: string[] = [];
+
+  for (let index = 0; index < safeCount; index++) {
+    selected.push(MARKET_SYMBOLS[(start + index) % MARKET_SYMBOLS.length]);
+  }
+
+  return selected;
+}
 
 function supabaseHeaders(env: Env) {
   if (!env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -109,7 +141,7 @@ async function supabaseRequest<T>(env: Env, path: string, init: RequestInit = {}
 async function getActiveAlgorithms(env: Env) {
   return await supabaseRequest<Algorithm[]>(
     env,
-    "algorithms?select=id,user_id,name,code,last_run_at&is_active=eq.true&order=last_run_at.asc.nullsfirst&limit=3"
+    `algorithms?select=id,user_id,name,code,last_run_at&is_active=eq.true&order=last_run_at.asc.nullsfirst&limit=${MAX_ACTIVE_ALGORITHMS_PER_CYCLE}`
   );
 }
 
@@ -159,12 +191,16 @@ async function runSimulation(env: Env, algorithm: Algorithm, symbol: string): Pr
   };
 }
 
-async function scanBestMarket(env: Env, algorithm: Algorithm) {
+async function scanBestMarket(env: Env, algorithm: Algorithm, candidateSymbols: readonly string[]) {
+  if (candidateSymbols.length === 0) {
+    throw new Error(`No candidate markets provided for ${algorithm.id}`);
+  }
+
   const results: SuccessfulSimulationResult[] = [];
   const batchSize = 6;
 
-  for (let index = 0; index < MARKET_SYMBOLS.length; index += batchSize) {
-    const batch = MARKET_SYMBOLS.slice(index, index + batchSize);
+  for (let index = 0; index < candidateSymbols.length; index += batchSize) {
+    const batch = candidateSymbols.slice(index, index + batchSize);
     const settled = await Promise.allSettled(batch.map((symbol) => runSimulation(env, algorithm, symbol)));
 
     for (const result of settled) {
@@ -236,12 +272,25 @@ async function persistExecution(
 
 async function runBotCycle(env: Env) {
   const runStartedAt = new Date().toISOString();
+  const runStartedAtMs = Date.parse(runStartedAt);
   const algorithms = await getActiveAlgorithms(env);
   const summaries: Array<{ algorithm_id: string; symbol?: string; trades: number; error?: string }> = [];
+  const algorithmCount = algorithms.length;
+  const maxSimulationCalls = Math.max(
+    MIN_MARKETS_PER_ALGORITHM,
+    MAX_EXTERNAL_SUBREQUESTS
+      - RESERVED_BASE_REQUESTS
+      - (algorithmCount * RESERVED_REQUESTS_PER_ALGORITHM)
+      - SUBREQUEST_HEADROOM
+  );
+  const marketsPerAlgorithm = algorithmCount > 0
+    ? Math.max(MIN_MARKETS_PER_ALGORITHM, Math.floor(maxSimulationCalls / algorithmCount))
+    : MIN_MARKETS_PER_ALGORITHM;
 
   for (const algorithm of algorithms) {
     try {
-      const best = await scanBestMarket(env, algorithm);
+      const candidateSymbols = selectSymbolsForCycle(algorithm.id, runStartedAtMs, marketsPerAlgorithm);
+      const best = await scanBestMarket(env, algorithm, candidateSymbols);
       const trades = await persistExecution(env, algorithm, best, runStartedAt);
       summaries.push({ algorithm_id: algorithm.id, symbol: best.symbol, trades });
     } catch (error) {
@@ -254,6 +303,8 @@ async function runBotCycle(env: Env) {
   console.log(JSON.stringify({
     event: "quantis_bot_cycle_complete",
     cron: CRON_PATTERN,
+    markets_per_algorithm: marketsPerAlgorithm,
+    max_simulation_calls: maxSimulationCalls,
     active_algorithms: algorithms.length,
     summaries
   }));
